@@ -507,8 +507,12 @@
         <button id="consumption-profile-duplicate" class="btn btn--sm btn--ghost">Dupliquer</button>
         <button id="consumption-profile-rename" class="btn btn--sm btn--ghost">Renommer</button>
         <button id="consumption-profile-delete" class="btn btn--sm btn--ghost">Supprimer</button>
+        <button id="consumption-profile-import" class="btn btn--sm btn--ghost">Charger un CSV</button>
+        <input type="file" id="consumption-profile-import-input" accept=".csv" style="display:none">
       </div>
       <p class="field__hint">Créez un profil par cas d'usage (ex. "Semaine", "Week-end", "Été sans clim").</p>
+      <p id="consumption-profile-import-status" class="field__hint" style="margin-top:4px;"></p>
+      <ul id="consumption-profile-import-errors" style="display:none; margin:4px 0 0; padding-left:20px; color:var(--accent-danger); font-size:12px; max-height:220px; overflow:auto;"></ul>
     </div>
 
     <div class="card">

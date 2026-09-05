@@ -51,6 +51,7 @@ window.TabConsumption = (function () {
     renderCalendarCosts();
     bindTariffChangeListener();
     bindCalendarExport();
+    bindProfileImport();
   }
 
   /**
@@ -160,6 +161,89 @@ window.TabConsumption = (function () {
       window.AppState.set("consumption", s.consumption);
       refreshUI();
     });
+  }
+
+  // ------------------------------------------------------------------
+  // Import d'un profil depuis un fichier CSV externe ("heure;puissance_w",
+  // même format à pas de 15 min que les fichiers journaliers du
+  // répertoire de consommation — voir ConsumptionUtils.parseQuarterHourCsv,
+  // partagée avec l'onglet Bilan financier pour ne pas dupliquer les
+  // règles de rejet).
+  // ------------------------------------------------------------------
+  function bindProfileImport() {
+    window.bindOnce(document.getElementById("consumption-profile-import"), "click", function () {
+      document.getElementById("consumption-profile-import-input").click();
+    });
+
+    window.bindOnce(document.getElementById("consumption-profile-import-input"), "change", function (e) {
+      const file = e.target.files[0];
+      e.target.value = ""; // permet de réimporter le même fichier deux fois de suite
+      if (!file) return;
+      const statusEl = document.getElementById("consumption-profile-import-status");
+      const reader = new FileReader();
+      reader.onload = function (ev) {
+        const result = window.ConsumptionUtils.parseQuarterHourCsv(ev.target.result);
+        if (!result.values) {
+          setImportErrors(result.errors);
+          statusEl.textContent = result.errors.length + " erreur(s) trouvée(s) — profil non créé.";
+          return;
+        }
+        setImportErrors([]);
+        const s = window.AppState.get();
+        const baseName = file.name.replace(/\.csv$/i, "");
+        const name = uniqueProfileName(baseName, s.consumption.profiles);
+        const id = "consumption-profile-" + Date.now().toString(36);
+        s.consumption.profiles.push({ id, name, segments: collapseQuarterHourToSegments(result.values) });
+        s.consumption.activeProfileId = id;
+        window.AppState.set("consumption", s.consumption);
+        statusEl.textContent = '✓ Profil "' + name + '" importé.';
+        refreshUI(); // sélecteur, plages, courbe/coût, calendrier
+      };
+      reader.onerror = function () {
+        statusEl.textContent = "Impossible de lire ce fichier.";
+      };
+      reader.readAsText(file);
+    });
+  }
+
+  function setImportErrors(errors) {
+    const list = document.getElementById("consumption-profile-import-errors");
+    if (!errors || errors.length === 0) {
+      list.style.display = "none";
+      list.innerHTML = "";
+    } else {
+      list.innerHTML = errors.map((e) => "<li>" + escapeHtml(e) + "</li>").join("");
+      list.style.display = "block";
+    }
+  }
+
+  /** Ajoute un suffixe "(2)", "(3)"... si le nom existe déjà, plutôt que d'écraser ou de refuser l'import. */
+  function uniqueProfileName(baseName, profiles) {
+    const existing = new Set(profiles.map((p) => p.name));
+    if (!existing.has(baseName)) return baseName;
+    let n = 2;
+    while (existing.has(baseName + " (" + n + ")")) n++;
+    return baseName + " (" + n + ")";
+  }
+
+  /**
+   * Regroupe 96 valeurs à pas de 15 min (fichier importé) en plages
+   * (startHour/endHour/powerW), format déjà utilisé par les profils de
+   * consommation — même principe que la migration des anciens profils
+   * horaires dans state.js, mais à pas de 15 min. Les plages à 0 W sont
+   * omises (une heure non couverte par une plage vaut déjà 0 W).
+   */
+  function collapseQuarterHourToSegments(values96) {
+    const segments = [];
+    let i = 0;
+    while (i < 96) {
+      const power = values96[i] || 0;
+      let j = i;
+      while (j < 96 && (values96[j] || 0) === power) j++;
+      if (power > 0) segments.push({ startHour: i * 0.25, endHour: j * 0.25, powerW: power });
+      i = j;
+    }
+    return segments;
   }
 
   // ------------------------------------------------------------------

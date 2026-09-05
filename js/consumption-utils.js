@@ -180,6 +180,77 @@ window.ConsumptionUtils = (function () {
     return values;
   }
 
+  // ------------------------------------------------------------------
+  // Fichiers de consommation à pas de 15 min ("heure;puissance_w", 96
+  // lignes de 00:00 à 23:45) : format partagé par l'import d'un profil
+  // isolé (onglet Consommation) et la vérification d'un répertoire de
+  // 365 fichiers journaliers (onglet Bilan financier), pour ne pas
+  // dupliquer les règles de rejet entre les deux.
+  // ------------------------------------------------------------------
+  const QUARTER_HOUR_TIMES = buildQuarterHourTimes();
+  const QUARTER_HOUR_NUMBER_RE = /^-?\d+(\.\d+)?$/;
+
+  function buildQuarterHourTimes() {
+    const times = [];
+    for (let h = 0; h < 24; h++) {
+      for (let q = 0; q < 4; q++) {
+        times.push(String(h).padStart(2, "0") + ":" + String(q * 15).padStart(2, "0"));
+      }
+    }
+    return times;
+  }
+
+  /**
+   * Parse et valide un fichier "heure;puissance_w" (1 en-tête + 96
+   * lignes, 00:00 à 23:45 par pas de 15 min, valeur = puissance
+   * moyenne en W). Retourne { values, errors } : values est le tableau
+   * des 96 puissances (W) si tout est conforme, sinon null — dans ce
+   * cas errors contient au moins un message précisant la ligne en
+   * cause (sans nom de fichier : à l'appelant de le préfixer s'il gère
+   * plusieurs fichiers).
+   */
+  function parseQuarterHourCsv(text) {
+    const errors = [];
+    let raw = text;
+    if (raw.charCodeAt(0) === 0xfeff) raw = raw.slice(1); // BOM éventuel (export Excel)
+    const lines = raw.split(/\r?\n/);
+    while (lines.length > 0 && lines[lines.length - 1].trim() === "") lines.pop();
+
+    if (lines.length !== 97) {
+      errors.push(lines.length + " ligne(s) trouvée(s), 97 attendues (1 en-tête + 96 lignes de données).");
+      return { values: null, errors };
+    }
+    if (lines[0].trim() !== "heure;puissance_w") {
+      errors.push('en-tête invalide ("' + lines[0].trim() + '", attendu "heure;puissance_w").');
+      return { values: null, errors };
+    }
+
+    const values = new Array(96);
+    let ok = true;
+    for (let i = 0; i < 96; i++) {
+      const cells = lines[i + 1].split(";");
+      const lineNo = i + 2;
+      if (cells.length !== 2) {
+        errors.push("ligne " + lineNo + ' : format invalide ("' + lines[i + 1] + '").');
+        ok = false;
+        continue;
+      }
+      const time = cells[0].trim();
+      if (time !== QUARTER_HOUR_TIMES[i]) {
+        errors.push("ligne " + lineNo + " : heure attendue " + QUARTER_HOUR_TIMES[i] + ", trouvée " + time + ".");
+        ok = false;
+      }
+      const valueStr = cells[1].trim();
+      if (!QUARTER_HOUR_NUMBER_RE.test(valueStr)) {
+        errors.push("ligne " + lineNo + ' : valeur de puissance invalide ("' + valueStr + '").');
+        ok = false;
+        continue;
+      }
+      values[i] = parseFloat(valueStr);
+    }
+    return { values: ok ? values : null, errors };
+  }
+
   return {
     powerAtHour,
     tariffForHour,
@@ -191,5 +262,6 @@ window.ConsumptionUtils = (function () {
     calendarAnnualCost,
     monthAssignedDays,
     segmentsToQuarterHourAverages,
+    parseQuarterHourCsv,
   };
 })();

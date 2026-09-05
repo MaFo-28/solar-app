@@ -302,19 +302,6 @@ window.TabFinancial = (function () {
   // vérification stricte du format avant tout calcul — voir
   // validateConsumptionDirectory ci-dessous pour le détail des règles.
   // ------------------------------------------------------------------
-  const EXPECTED_TIMES = buildExpectedTimes();
-  const NUMBER_RE = /^-?\d+(\.\d+)?$/;
-
-  function buildExpectedTimes() {
-    const times = [];
-    for (let h = 0; h < 24; h++) {
-      for (let q = 0; q < 4; q++) {
-        times.push(String(h).padStart(2, "0") + ":" + String(q * 15).padStart(2, "0"));
-      }
-    }
-    return times;
-  }
-
   /** Les 365 clés "MM-DD" attendues, dans l'ordre du calendrier. */
   function expectedDayKeys() {
     const U = window.ConsumptionUtils;
@@ -457,51 +444,17 @@ window.TabFinancial = (function () {
 
   /**
    * Valide et parse un fichier journalier ("heure;puissance_w", 96
-   * lignes de 00:00 à 23:45 par pas de 15 min). Retourne le tableau des
-   * 96 puissances (W) si tout est conforme, sinon null (les erreurs
-   * précises sont poussées dans le tableau `errors` partagé).
+   * lignes de 00:00 à 23:45 par pas de 15 min) — délègue à
+   * ConsumptionUtils.parseQuarterHourCsv, partagée avec l'import de
+   * profil isolé de l'onglet Consommation, pour ne pas dupliquer les
+   * règles de rejet. Retourne le tableau des 96 puissances (W) si tout
+   * est conforme, sinon null (les erreurs précises, préfixées par le
+   * nom du fichier, sont poussées dans le tableau `errors` partagé).
    */
   function parseDayFile(fileName, text, errors) {
-    let raw = text;
-    if (raw.charCodeAt(0) === 0xfeff) raw = raw.slice(1); // BOM éventuel (export Excel)
-    const lines = raw.split(/\r?\n/);
-    while (lines.length > 0 && lines[lines.length - 1].trim() === "") lines.pop();
-
-    if (lines.length !== 97) {
-      errors.push(
-        fileName + " : " + lines.length + " ligne(s) trouvée(s), 97 attendues (1 en-tête + 96 lignes de données)."
-      );
-      return null;
-    }
-    if (lines[0].trim() !== "heure;puissance_w") {
-      errors.push(fileName + ' : en-tête invalide ("' + lines[0].trim() + '", attendu "heure;puissance_w").');
-      return null;
-    }
-
-    const values = new Array(96);
-    let ok = true;
-    for (let i = 0; i < 96; i++) {
-      const cells = lines[i + 1].split(";");
-      const lineNo = i + 2;
-      if (cells.length !== 2) {
-        errors.push(fileName + " ligne " + lineNo + ' : format invalide ("' + lines[i + 1] + '").');
-        ok = false;
-        continue;
-      }
-      const time = cells[0].trim();
-      if (time !== EXPECTED_TIMES[i]) {
-        errors.push(fileName + " ligne " + lineNo + " : heure attendue " + EXPECTED_TIMES[i] + ", trouvée " + time + ".");
-        ok = false;
-      }
-      const valueStr = cells[1].trim();
-      if (!NUMBER_RE.test(valueStr)) {
-        errors.push(fileName + " ligne " + lineNo + ' : valeur de puissance invalide ("' + valueStr + '").');
-        ok = false;
-        continue;
-      }
-      values[i] = parseFloat(valueStr);
-    }
-    return ok ? values : null;
+    const result = window.ConsumptionUtils.parseQuarterHourCsv(text);
+    result.errors.forEach((e) => errors.push(fileName + " : " + e));
+    return result.values;
   }
 
   /**
