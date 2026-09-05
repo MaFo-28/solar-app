@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rentabilité solaire</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  /* En-tête + navigation fixes au défilement (ajouté ici pour ne
+     toucher qu'à index.html, sans modifier css/style.css) */
+  .app-sticky-wrap {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+  }
+</style>
+</head>
+<body>
+
+<div class="app-sticky-wrap">
+<header class="app-header">
+  <div class="app-header__title">
+    <span class="sun-glyph">☀</span>
+    <h1>Rentabilité solaire</h1>
+    <span class="app-header__subtitle">projet local — hors-ligne</span>
+  </div>
+  <div class="app-header__project" id="header-project-name">projet non enregistré</div>
+  <div class="app-header__actions">
+    <span id="header-save-status" class="status-msg"></span>
+    <button id="btn-load-project" class="btn btn--sm">Charger</button>
+    <button id="btn-save-project" class="btn btn--sm btn--primary">Enregistrer</button>
+    <button id="btn-save-as-project" class="btn btn--sm btn--ghost">Enregistrer sous</button>
+    <input type="file" id="load-project-input" accept=".json" style="display:none">
+  </div>
+</header>
+
+<nav class="tab-nav">
+  <button class="tab-nav__item" data-tab="location"><span class="tab-nav__index">01</span> Localisation</button>
+  <button class="tab-nav__item" data-tab="material"><span class="tab-nav__index">02</span> Matériel</button>
+  <button class="tab-nav__item" data-tab="consumption"><span class="tab-nav__index">03</span> Consommation</button>
+  <button class="tab-nav__item" data-tab="simulation"><span class="tab-nav__index">04</span> Simulation</button>
+  <button class="tab-nav__item" data-tab="financial"><span class="tab-nav__index">05</span> Bilan financier</button>
+</nav>
+</div>
+
+<main class="app-main">
+
+  <!-- ============================================================
+       ONGLET 1 — LOCALISATION
+       ============================================================ -->
+  <section id="tab-location" class="tab-panel">
+
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Adresse et coordonnées</h2>
+      </div>
+
+      <form id="loc-geocode-form" class="field-row">
+        <div class="field" style="flex:1">
+          <label for="loc-address">Adresse</label>
+          <input type="text" id="loc-address" placeholder="12 rue de la Paix, 75002 Paris">
+        </div>
+        <button type="submit" class="btn">Rechercher</button>
+      </form>
+      <p id="loc-geocode-status" class="field__hint"></p>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="loc-lat">Latitude</label>
+          <input type="number" id="loc-lat" step="0.00001" placeholder="48.86890">
+        </div>
+        <div class="field">
+          <label for="loc-lng">Longitude</label>
+          <input type="number" id="loc-lng" step="0.00001" placeholder="2.33210">
+        </div>
+      </div>
+      <button id="loc-apply-manual" class="btn btn--sm">Appliquer ces coordonnées</button>
+    </div>
+
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Angles solaires aux solstices</h2>
+      </div>
+      <div class="stat-row">
+        <div class="stat">
+          <span class="stat__label">Élévation max — été</span>
+          <span class="stat__value"><span id="stat-elev-ete">—</span><span class="stat__unit">°</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Élévation max — hiver</span>
+          <span class="stat__value stat__value--battery"><span id="stat-elev-hiver">—</span><span class="stat__unit">°</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Élévation max — équinoxe</span>
+          <span class="stat__value stat__value--equinox"><span id="stat-elev-equinoxe">—</span><span class="stat__unit">°</span></span>
+        </div>
+      </div>
+      <p id="loc-shade-warning" class="field__hint" style="display:none; color:var(--accent-danger); margin-top:10px;"></p>
+      <div class="chart-wrap" style="margin-top:16px;">
+        <canvas id="chart-elevation"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Trajectoire solaire par azimut — risque d'ombre</h2>
+      </div>
+
+      <div class="field-row" style="align-items:flex-end; margin-bottom:10px;">
+        <div class="field" style="flex:1; margin-bottom:0;">
+          <label for="mask-profile-select">Profil d'ombre affiché</label>
+          <select id="mask-profile-select"></select>
+        </div>
+        <button id="mask-profile-new" class="btn btn--sm">+ Nouveau profil</button>
+        <button id="mask-profile-duplicate" class="btn btn--sm btn--ghost">Dupliquer</button>
+        <button id="mask-profile-rename" class="btn btn--sm btn--ghost">Renommer</button>
+        <button id="mask-profile-delete" class="btn btn--sm btn--ghost">Supprimer</button>
+      </div>
+      <p class="field__hint">Un obstacle proche n'a pas la même hauteur angulaire vue du sol ou du toit (parallaxe) : créez un profil par point d'observation (ex. "Sol", "Bas de toiture", "Haut de toiture"). Un seul profil est affiché à la fois.</p>
+
+      <p class="field__hint" style="margin-top:14px;">Élévation du soleil en fonction de sa direction par rapport au Sud (-90°=Est, 0°=Sud, +90°=Ouest). Survolez la courbe pour lire les valeurs. Repérez un obstacle (arbre, maison...) par son azimut et sa hauteur angulaire, et regardez où il se situe par rapport aux 3 courbes.</p>
+      <div class="chart-wrap" style="margin-top:12px;">
+        <canvas id="chart-azimuth"></canvas>
+      </div>
+      <p id="loc-mask-warning" class="field__hint" style="display:none; color:var(--accent-danger); margin-top:10px;"></p>
+
+      <div class="card__header" style="margin-top:18px;">
+        <h2 class="card__title">Limites d'exposition (masque d'horizon)</h2>
+      </div>
+      <p class="field__hint">Renseignez les obstacles qui masquent l'horizon (bâtiment voisin, arbre, relief…) : la plage d'azimut qu'ils couvrent et leur hauteur angulaire. Vide par défaut = pas d'obstacle connu.</p>
+      <table class="data-table">
+        <thead><tr><th>Azimut début (° / Sud)</th><th>Azimut fin (° / Sud)</th><th>Hauteur obstacle (°) <button id="mask-add-row" class="btn btn--sm" style="margin-left:8px; text-transform:none; font-size:12px; letter-spacing:normal;">+ Ajouter un point</button></th><th></th></tr></thead>
+        <tbody id="mask-table-body"></tbody>
+      </table>
+
+      <div class="card__header" style="margin-top:18px;">
+        <h2 class="card__title">Calculette : angle vu depuis une autre hauteur</h2>
+      </div>
+      <p class="field__hint">Mesuré au sol, mais les panneaux seront en hauteur (toiture) ? Un obstacle proche change beaucoup d'angle selon la hauteur d'observation (parallaxe) — corrigez la mesure ici avant de l'ajouter au tableau ci-dessus.</p>
+      <div class="checkbox-row" style="gap:20px; margin-top:4px;">
+        <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text);">
+          <input type="radio" name="calc-distance-mode" id="calc-mode-horizontal" value="horizontal" checked style="accent-color:var(--accent-solar);">
+          Distance horizontale (au sol)
+        </label>
+        <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text);">
+          <input type="radio" name="calc-distance-mode" id="calc-mode-slant" value="slant" style="accent-color:var(--accent-solar);">
+          Distance à vol d'oiseau jusqu'au sommet (télémètre)
+        </label>
+      </div>
+      <div class="grid-3">
+        <div class="field">
+          <label for="calc-measure-height">Hauteur de mesure (m)</label>
+          <input type="number" id="calc-measure-height" step="0.1" min="0" value="1.5">
+        </div>
+        <div class="field">
+          <label for="calc-distance">Distance mesurée (m)</label>
+          <input type="number" id="calc-distance" step="0.5" min="0.1">
+        </div>
+        <div class="field">
+          <label for="calc-measured-elevation">Élévation mesurée (°)</label>
+          <input type="number" id="calc-measured-elevation" step="0.5">
+        </div>
+        <div class="field">
+          <label for="calc-desired-height">Hauteur souhaitée (m)</label>
+          <input type="number" id="calc-desired-height" step="0.1" min="0">
+        </div>
+      </div>
+      <div class="stat-row">
+        <div class="stat">
+          <span class="stat__label">Distance horizontale déduite</span>
+          <span class="stat__value"><span id="calc-horizontal-distance">—</span><span class="stat__unit">m</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Hauteur de l'obstacle (calculée)</span>
+          <span class="stat__value"><span id="calc-obstacle-height">—</span><span class="stat__unit">m</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Nouvel angle d'élévation</span>
+          <span class="stat__value stat__value--battery"><span id="calc-new-elevation">—</span><span class="stat__unit">°</span></span>
+        </div>
+      </div>
+      <p class="field__hint" style="margin-top:8px;">Reportez cette valeur à la main dans le tableau ci-dessus : l'azimut mesuré reste valable, seule l'élévation change avec la hauteur d'observation.</p>
+    </div>
+
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Lever / coucher du soleil</h2>
+      </div>
+      <div class="field" style="max-width:340px;">
+        <label for="loc-horizon-threshold">Seuil d'élévation (° au-dessus de l'horizon)</label>
+        <input type="number" id="loc-horizon-threshold" step="1" min="0" max="30">
+        <span class="field__hint">0° = horizon théorique parfait. Augmentez (ex. 5-10°) pour tenir compte d'un horizon masqué par le bâti, le relief ou des arbres — plus réaliste pour le risque d'ombre.</span>
+      </div>
+      <table class="data-table">
+        <thead><tr><th></th><th>Lever</th><th>Azimut lever</th><th>Coucher</th><th>Azimut coucher</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Été (21 juin)</td>
+            <td id="stat-ete-lever-h">—</td>
+            <td id="stat-ete-lever-az">—</td>
+            <td id="stat-ete-coucher-h">—</td>
+            <td id="stat-ete-coucher-az">—</td>
+          </tr>
+          <tr>
+            <td>Hiver (21 déc.)</td>
+            <td id="stat-hiver-lever-h">—</td>
+            <td id="stat-hiver-lever-az">—</td>
+            <td id="stat-hiver-coucher-h">—</td>
+            <td id="stat-hiver-coucher-az">—</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="field__hint" style="margin-top:10px;">Azimuts par rapport au Sud (même convention que l'orientation des panneaux, onglet 2) : négatif = côté Est, positif = côté Ouest. Heures en temps solaire local (sans changement d'heure été/hiver).</p>
+    </div>
+
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Données PVGIS (irradiance réelle)</h2>
+        <button id="loc-open-pvgis" class="btn btn--sm">Ouvrir PVGIS</button>
+      </div>
+      <p class="field__hint">PVGIS bloque volontairement les requêtes automatiques depuis un navigateur : on ouvre la donnée dans un nouvel onglet, vous copiez tout (Ctrl/Cmd+A puis Ctrl/Cmd+C), et vous collez ici.</p>
+      <div class="field">
+        <label for="loc-pvgis-paste">Coller le contenu JSON récupéré</label>
+        <textarea id="loc-pvgis-paste" rows="4" style="background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); color:var(--text); font-family:var(--font-data); font-size:12px; padding:8px 10px;"></textarea>
+      </div>
+      <button id="loc-pvgis-import" class="btn btn--sm">Importer les données collées</button>
+      <p id="loc-pvgis-status" class="field__hint" style="margin-top:8px;"></p>
+      <div id="loc-pvgis-summary" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Tarifs électricité</h2>
+        <button id="tariff-add-row" class="btn btn--sm">+ Ajouter une plage</button>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr><th>Libellé</th><th>Début (h)</th><th>Fin (h)</th><th>Prix €/kWh</th><th></th></tr>
+        </thead>
+        <tbody id="tariff-table-body"></tbody>
+      </table>
+      <div class="field" style="max-width:260px; margin-top:14px;">
+        <label for="loc-sell-tariff">Prix de revente du surplus (€/kWh)</label>
+        <input type="number" id="loc-sell-tariff" step="0.0001" min="0">
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ============================================================
+       ONGLET 2 — MATÉRIEL (bases de données panneaux/onduleurs/batteries)
+       ============================================================ -->
+  <section id="tab-material" class="tab-panel">
+
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Bibliothèque matériel</h2>
+      </div>
+      <p class="field__hint">Enregistrez panneaux/onduleurs/batteries dans un fichier séparé (indépendant d'un projet), pour le réutiliser ou le partager tel quel.</p>
+      <div class="field-row" style="align-items:center; margin-top:10px;">
+        <button id="material-lib-load" class="btn btn--sm">Charger une base</button>
+        <button id="material-lib-save" class="btn btn--sm btn--primary">Enregistrer la base</button>
+        <button id="material-lib-save-as" class="btn btn--sm btn--ghost">Enregistrer la base sous</button>
+        <input type="file" id="material-lib-load-input" accept=".json" style="display:none">
+        <span id="material-lib-name" class="field__hint" style="margin-left:6px;">bibliothèque non enregistrée</span>
+      </div>
+      <span id="material-lib-status" class="status-msg"></span>
+    </div>
+
+    <!-- ==================== PANNEAUX ==================== -->
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Panneaux</h2>
+      </div>
+      <div class="field-row" style="align-items:flex-end;">
+        <div class="field" style="flex:1; margin-bottom:0;">
+          <label for="material-panel-select">Modèle sélectionné</label>
+          <select id="material-panel-select"></select>
+        </div>
+        <button id="material-panel-new" class="btn btn--sm">+ Nouveau panneau</button>
+        <button id="material-panel-duplicate" class="btn btn--sm btn--ghost">Dupliquer</button>
+        <button id="material-panel-rename" class="btn btn--sm btn--ghost">Renommer</button>
+        <button id="material-panel-delete" class="btn btn--sm btn--ghost">Supprimer</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__header"><h2 class="card__title">Caractéristiques</h2></div>
+      <div class="grid-3">
+        <div class="field">
+          <label for="material-panel-field-brand">Marque</label>
+          <input type="text" id="material-panel-field-brand">
+        </div>
+        <div class="field">
+          <label for="material-panel-field-model">Modèle</label>
+          <input type="text" id="material-panel-field-model">
+        </div>
+        <div class="field">
+          <label for="material-panel-field-priceEur">Prix (€)</label>
+          <input type="number" id="material-panel-field-priceEur" step="1" min="0">
+        </div>
+        <div class="field">
+          <label for="material-panel-field-widthM">Largeur (m)</label>
+          <input type="number" id="material-panel-field-widthM" step="0.01" min="0">
+        </div>
+        <div class="field">
+          <label for="material-panel-field-heightM">Hauteur (m)</label>
+          <input type="number" id="material-panel-field-heightM" step="0.01" min="0">
+        </div>
+        <div class="field">
+          <label for="material-panel-field-powerWc">Puissance (Wc)</label>
+          <input type="number" id="material-panel-field-powerWc" step="1" min="0">
+        </div>
+        <div class="field">
+          <label>Surface (calculée)</label>
+          <input type="text" id="material-panel-surface-display" disabled style="color:var(--text-faint);">
+        </div>
+        <div class="field">
+          <label>Rendement (calculé)</label>
+          <input type="text" id="material-panel-efficiency-display" disabled style="color:var(--text-faint);">
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== ONDULEUR ==================== -->
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Onduleur</h2>
+      </div>
+      <div class="field-row" style="align-items:flex-end;">
+        <div class="field" style="flex:1; margin-bottom:0;">
+          <label for="inverter-model-select">Modèle sélectionné</label>
+          <select id="inverter-model-select"></select>
+        </div>
+        <button id="inverter-new" class="btn btn--sm">+ Nouvel onduleur</button>
+        <button id="inverter-duplicate" class="btn btn--sm btn--ghost">Dupliquer</button>
+        <button id="inverter-rename" class="btn btn--sm btn--ghost">Renommer</button>
+        <button id="inverter-delete" class="btn btn--sm btn--ghost">Supprimer</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__header"><h2 class="card__title">Caractéristiques</h2></div>
+      <div class="grid-3">
+        <div class="field">
+          <label for="inverter-field-brand">Marque</label>
+          <input type="text" id="inverter-field-brand">
+        </div>
+        <div class="field">
+          <label for="inverter-field-model">Modèle</label>
+          <input type="text" id="inverter-field-model">
+        </div>
+        <div class="field">
+          <label for="inverter-field-priceEur">Prix (€)</label>
+          <input type="number" id="inverter-field-priceEur" step="1" min="0">
+        </div>
+        <div class="field">
+          <label for="inverter-field-ratedPowerW">Puissance nominale (W)</label>
+          <input type="number" id="inverter-field-ratedPowerW" step="10" min="0">
+        </div>
+        <div class="field">
+          <label for="inverter-field-efficiencyPct">Rendement (%)</label>
+          <input type="number" id="inverter-field-efficiencyPct" step="0.1" min="0" max="100">
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== BATTERIE ==================== -->
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Batterie</h2>
+      </div>
+      <div class="field-row" style="align-items:flex-end;">
+        <div class="field" style="flex:1; margin-bottom:0;">
+          <label for="battery-model-select">Modèle sélectionné</label>
+          <select id="battery-model-select"></select>
+        </div>
+        <button id="battery-new" class="btn btn--sm">+ Nouvelle batterie</button>
+        <button id="battery-duplicate" class="btn btn--sm btn--ghost">Dupliquer</button>
+        <button id="battery-rename" class="btn btn--sm btn--ghost">Renommer</button>
+        <button id="battery-delete" class="btn btn--sm btn--ghost">Supprimer</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__header"><h2 class="card__title">Caractéristiques</h2></div>
+
+      <div class="grid-3">
+        <div class="field">
+          <label for="battery-field-brand">Marque</label>
+          <input type="text" id="battery-field-brand">
+        </div>
+        <div class="field">
+          <label for="battery-field-model">Modèle</label>
+          <input type="text" id="battery-field-model">
+        </div>
+        <div class="field">
+          <label for="battery-field-priceEur">Prix (€)</label>
+          <input type="number" id="battery-field-priceEur" step="1" min="0">
+        </div>
+        <div class="field">
+          <label for="battery-field-capacityKwh">Capacité (kWh)</label>
+          <input type="number" id="battery-field-capacityKwh" step="0.1" min="0">
+        </div>
+      </div>
+
+      <h3 style="font-size:12px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; margin:16px 0 8px;">Charge</h3>
+      <div class="grid-3">
+        <div class="field">
+          <label for="battery-field-chargePowerW">Puissance de charge (W)</label>
+          <input type="number" id="battery-field-chargePowerW" step="10" min="0">
+        </div>
+        <div class="field">
+          <label for="battery-field-chargeEfficiencyPct">Rendement de charge (%)</label>
+          <input type="number" id="battery-field-chargeEfficiencyPct" step="0.1" min="0" max="100">
+        </div>
+        <div class="field">
+          <div class="checkbox-row" style="margin-top:22px;">
+            <input type="checkbox" id="battery-field-chargeSchedulable">
+            <label for="battery-field-chargeSchedulable">Charge déplaçable (pilotage horaire)</label>
+          </div>
+        </div>
+      </div>
+
+      <h3 style="font-size:12px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; margin:16px 0 8px;">Décharge</h3>
+      <div class="grid-3">
+        <div class="field">
+          <label for="battery-field-dischargePowerW">Puissance de décharge (W)</label>
+          <input type="number" id="battery-field-dischargePowerW" step="10" min="0">
+        </div>
+        <div class="field">
+          <label for="battery-field-dischargeEfficiencyPct">Rendement de décharge (%)</label>
+          <input type="number" id="battery-field-dischargeEfficiencyPct" step="0.1" min="0" max="100">
+        </div>
+        <div class="field">
+          <div class="checkbox-row" style="margin-top:22px;">
+            <input type="checkbox" id="battery-field-dischargeSchedulable">
+            <label for="battery-field-dischargeSchedulable">Décharge déplaçable (pilotage horaire)</label>
+          </div>
+        </div>
+      </div>
+
+      <h3 style="font-size:12px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; margin:16px 0 8px;">Entrée solaire directe</h3>
+      <p class="field__hint">Connexion directe des panneaux sur la batterie (MPPT intégré), sans passer par un onduleur séparé.</p>
+      <div class="grid-3">
+        <div class="field">
+          <div class="checkbox-row" style="margin-top:4px;">
+            <input type="checkbox" id="battery-field-hasSolarInput">
+            <label for="battery-field-hasSolarInput">Entrée solaire disponible</label>
+          </div>
+        </div>
+        <div class="field">
+          <label for="battery-field-solarInputEfficiencyPct">Rendement solaire (%)</label>
+          <input type="number" id="battery-field-solarInputEfficiencyPct" step="0.1" min="0" max="100">
+        </div>
+      </div>
+
+      <h3 style="font-size:12px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; margin:16px 0 8px;">Durée de vie</h3>
+      <div class="grid-3">
+        <div class="field">
+          <label for="battery-field-guaranteedCycles">Cycles garantis</label>
+          <input type="number" id="battery-field-guaranteedCycles" step="10" min="0">
+        </div>
+        <div class="field">
+          <label for="battery-field-guaranteedCyclesSoc">SoC associé (%)</label>
+          <input type="number" id="battery-field-guaranteedCyclesSoc" step="1" min="0" max="100">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       ONGLET 5 — CONSOMMATION
+       ============================================================ -->
+  <section id="tab-consumption" class="tab-panel">
+
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Profil de consommation</h2>
+      </div>
+      <div class="field-row" style="align-items:flex-end; margin-bottom:10px;">
+        <div class="field" style="flex:1; margin-bottom:0;">
+          <label for="consumption-profile-select">Profil affiché</label>
+          <select id="consumption-profile-select"></select>
+        </div>
+        <button id="consumption-profile-new" class="btn btn--sm">+ Nouveau profil</button>
+        <button id="consumption-profile-duplicate" class="btn btn--sm btn--ghost">Dupliquer</button>
+        <button id="consumption-profile-rename" class="btn btn--sm btn--ghost">Renommer</button>
+        <button id="consumption-profile-delete" class="btn btn--sm btn--ghost">Supprimer</button>
+      </div>
+      <p class="field__hint">Créez un profil par cas d'usage (ex. "Semaine", "Week-end", "Été sans clim"). Un seul profil est affiché/édité à la fois.</p>
+    </div>
+
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Courbe et coût</h2>
+      </div>
+      <div class="stat-row" style="margin-bottom:16px;">
+        <div class="stat">
+          <span class="stat__label">Consommation du jour</span>
+          <span class="stat__value"><span id="stat-consumption-kwh">—</span><span class="stat__unit">kWh</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Coût du jour</span>
+          <span class="stat__value stat__value--battery"><span id="stat-consumption-cost">—</span><span class="stat__unit">€</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Coût Heures Creuses</span>
+          <span class="stat__value stat__value--equinox"><span id="stat-consumption-cost-hc">—</span><span class="stat__unit">€</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Coût Heures Pleines</span>
+          <span class="stat__value"><span id="stat-consumption-cost-hp">—</span><span class="stat__unit">€</span></span>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="chart-consumption"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Plages de consommation</h2>
+      </div>
+      <p class="field__hint">Ajoutez une plage par appareil ou usage (ex. "6h-8h, 2000 W" pour un chauffe-eau). Les plages qui se chevauchent s'additionnent.</p>
+      <table class="data-table">
+        <thead><tr><th>Heure début</th><th>Heure fin</th><th>Puissance (W) <button id="consumption-add-segment" class="btn btn--sm" style="margin-left:8px; text-transform:none; font-size:12px; letter-spacing:normal;">+ Ajouter une plage</button></th><th></th></tr></thead>
+        <tbody id="consumption-segment-table-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       ONGLET 6 — STRATÉGIE
+       ============================================================ -->
+  <section id="tab-simulation" class="tab-panel">
+
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Installation</h2>
+      </div>
+      <p class="field__hint">Panneaux, onduleur et batterie choisis parmi les modèles de l'onglet Matériel — c'est la config utilisée ici et dans le Bilan financier.</p>
+
+      <h3 style="font-size:12px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; margin:16px 0 8px;">Panneaux</h3>
+      <div class="grid-3">
+        <div class="field">
+          <label for="strategy-panel-select">Modèle</label>
+          <select id="strategy-panel-select"></select>
+        </div>
+        <div class="field">
+          <label for="strategy-panel-count">Nombre</label>
+          <input type="number" id="strategy-panel-count" min="1" step="1">
+        </div>
+        <div class="field">
+          <label for="strategy-panel-orientation">Orientation (° / Sud)</label>
+          <input type="number" id="strategy-panel-orientation" step="1">
+        </div>
+        <div class="field">
+          <label for="strategy-panel-tilt">Inclinaison (°)</label>
+          <input type="number" id="strategy-panel-tilt" min="0" max="90" step="1">
+        </div>
+        <div class="field">
+          <label for="strategy-panel-mask">Profil d'ombre</label>
+          <select id="strategy-panel-mask"></select>
+        </div>
+        <div class="field">
+          <label for="strategy-panel-degradation">Dégradation annuelle (%/an)</label>
+          <input type="number" id="strategy-panel-degradation" min="0" step="0.1">
+        </div>
+      </div>
+
+      <h3 style="font-size:12px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; margin:16px 0 8px;">Onduleur</h3>
+      <div class="field" style="max-width:340px;">
+        <label for="strategy-inverter-select">Modèle</label>
+        <select id="strategy-inverter-select"></select>
+      </div>
+
+      <h3 style="font-size:12px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; margin:16px 0 8px;">Batterie</h3>
+      <div class="grid-2">
+        <div class="field">
+          <label for="strategy-battery-select">Modèle</label>
+          <select id="strategy-battery-select"></select>
+        </div>
+        <div class="field">
+          <label for="strategy-battery-count">Nombre</label>
+          <input type="number" id="strategy-battery-count" min="1" step="1">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Production horaire théorique</h2>
+      </div>
+      <p class="field__hint">Puissance instantanée selon l'orientation, l'inclinaison et le masquage du profil d'ombre choisi. Suppose un ciel parfaitement clair (sans nuage), avec l'atténuation atmosphérique naturelle selon la hauteur du soleil (plus faible à l'horizon) : c'est un maximum théorique par temps clair, pas une prévision réelle (nuages non inclus, voir la production mensuelle PVGIS ci-dessous pour ça). Heures en heure réelle française (été/équinoxe : UTC+2, hiver : UTC+1) — pas en heure solaire.</p>
+      <div class="chart-wrap" style="margin-top:12px;">
+        <canvas id="chart-panel-power"></canvas>
+      </div>
+      <div class="stat-row" style="margin-top:14px;">
+        <div class="stat">
+          <span class="stat__label">Production théorique — été</span>
+          <span class="stat__value"><span id="stat-energy-ete">—</span><span class="stat__unit">kWh/jour</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Production théorique — hiver</span>
+          <span class="stat__value stat__value--battery"><span id="stat-energy-hiver">—</span><span class="stat__unit">kWh/jour</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Production théorique — équinoxe</span>
+          <span class="stat__value stat__value--equinox"><span id="stat-energy-equinoxe">—</span><span class="stat__unit">kWh/jour</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Production mensuelle réaliste (PVGIS)</h2>
+      </div>
+      <p id="panel-monthly-hint" class="field__hint">Récupérez d'abord les données PVGIS dans l'onglet Localisation pour voir cette estimation.</p>
+      <div class="chart-wrap" id="panel-monthly-chart-wrap" style="margin-top:12px; display:none;">
+        <canvas id="chart-panel-monthly"></canvas>
+      </div>
+      <div class="stat-row" id="panel-monthly-total-wrap" style="margin-top:14px; display:none;">
+        <div class="stat">
+          <span class="stat__label">Production annuelle estimée</span>
+          <span class="stat__value"><span id="stat-annual-production">—</span><span class="stat__unit">kWh/an</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Économie max. si 100% autoconsommée</span>
+          <span class="stat__value stat__value--battery"><span id="stat-annual-value">—</span><span class="stat__unit">€/an</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Dégradation dans le temps</h2>
+      </div>
+      <p class="field__hint">Perte de rendement cumulée des panneaux sur 25 ans, au taux de dégradation annuel renseigné ci-dessus.</p>
+      <div class="chart-wrap" style="margin-top:12px;">
+        <canvas id="chart-panel-degradation"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Profils de consommation</h2>
+      </div>
+      <div class="field" style="max-width:400px;">
+        <label for="strategy-consumption-profile-1">Profil</label>
+        <select id="strategy-consumption-profile-1"></select>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__header"><h2 class="card__title">Stratégie de charge de la batterie</h2></div>
+      <div class="grid-2">
+        <div class="field">
+          <label for="strategy-charge-mode">Priorité</label>
+          <select id="strategy-charge-mode">
+            <option value="surplus">Uniquement le surplus (maison d'abord)</option>
+            <option value="priority">Batterie prioritaire (avant la maison)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="strategy-charge-grid">Recharge réseau</label>
+          <select id="strategy-charge-grid">
+            <option value="off">Solaire uniquement</option>
+            <option value="hc">Autoriser en heures creuses</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="strategy-charge-max-soc">Limite de charge (%)</label>
+          <input type="number" id="strategy-charge-max-soc" min="1" max="100" step="1">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__header"><h2 class="card__title">Stratégie de décharge de la batterie</h2></div>
+      <div class="grid-3">
+        <div class="field">
+          <label for="strategy-discharge-mode">Déclenchement</label>
+          <select id="strategy-discharge-mode">
+            <option value="asap">Dès que possible</option>
+            <option value="hp">Uniquement en heures pleines</option>
+            <option value="schedule">Plage horaire dédiée</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="strategy-discharge-start">Début de plage (h)</label>
+          <input type="number" id="strategy-discharge-start" min="0" max="24" step="0.5">
+        </div>
+        <div class="field">
+          <label for="strategy-discharge-end">Fin de plage (h)</label>
+          <input type="number" id="strategy-discharge-end" min="0" max="24" step="0.5">
+        </div>
+        <div class="field">
+          <label for="strategy-discharge-min-soc">Limite de décharge (%)</label>
+          <input type="number" id="strategy-discharge-min-soc" min="0" max="99" step="1">
+        </div>
+      </div>
+      <div class="grid-3">
+        <div class="field">
+          <label for="strategy-initial-soc">Niveau de charge de début (%)</label>
+          <input type="number" id="strategy-initial-soc" min="0" max="100" step="1">
+          <span class="field__hint">Niveau de la batterie au début de la journée simulée.</span>
+        </div>
+        <div class="field">
+          <label>Niveau de charge de fin (%)</label>
+          <input type="text" id="strategy-final-soc-display" disabled style="color:var(--text-faint);">
+          <span class="field__hint">Résultat de la simulation, par saison.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__header"><h2 class="card__title">Stratégie de vente du surplus</h2></div>
+      <div class="field" style="max-width:400px;">
+        <select id="strategy-sell-mode">
+          <option value="sell">Revente (au tarif défini dans l'onglet Localisation)</option>
+          <option value="zero">0 injection (surplus écrêté, perdu)</option>
+          <option value="free">Injection gratuite (envoyé au réseau, non rémunéré)</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="strategy-errors" class="card" style="display:none; border-color:var(--accent-danger);">
+      <div class="card__header"><h2 class="card__title" style="color:var(--accent-danger);">Configuration invalide</h2></div>
+      <ul id="strategy-errors-list" style="margin:0; padding-left:20px; color:var(--accent-danger); font-size:13px;"></ul>
+    </div>
+
+    <div id="strategy-results"></div>
+
+  </section>
+
+  <!-- ============================================================
+       ONGLET 7 — BILAN FINANCIER
+       ============================================================ -->
+  <section id="tab-financial" class="tab-panel">
+    <div class="card">
+      <div class="card__header"><h2 class="card__title">Coût matériel</h2></div>
+      <div class="stat-row">
+        <div class="stat">
+          <span class="stat__label">Panneaux</span>
+          <span class="stat__value"><span id="stat-cost-panels">—</span><span class="stat__unit">€</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Onduleur</span>
+          <span class="stat__value"><span id="stat-cost-inverter">—</span><span class="stat__unit">€</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Batterie</span>
+          <span class="stat__value stat__value--battery"><span id="stat-cost-battery">—</span><span class="stat__unit">€</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Total</span>
+          <span class="stat__value"><span id="stat-cost-total">—</span><span class="stat__unit">€</span></span>
+        </div>
+      </div>
+    </div>
+    <div class="tab-panel__placeholder">
+      <strong>À venir :</strong> production estimée, économies annuelles, temps de retour sur investissement, courbe de rentabilité cumulée sur 20-25 ans.
+    </div>
+  </section>
+
+</main>
+
+<!-- Vendor (Chart.js, embarqué localement pour fonctionner hors-ligne) -->
+<script src="js/vendor/chart.umd.min.js"></script>
+<script src="js/dom-utils.js"></script>
+
+<!-- Bases de données matériel (chargées avant state.js : l'état par
+     défaut s'en sert pour initialiser la base éditable) -->
+<script src="js/data-panels.js"></script>
+<script src="js/data-inverters.js"></script>
+<script src="js/data-batteries.js"></script>
+
+<!-- Cœur applicatif -->
+<script src="js/solar-geometry.js"></script>
+<script src="js/horizon-mask.js"></script>
+<script src="js/consumption-utils.js"></script>
+<script src="js/pv-production.js"></script>
+<script src="js/battery-simulation.js"></script>
+<script src="js/state.js"></script>
+
+<!-- Onglets -->
+<script src="js/tabs/tab-location.js"></script>
+<script src="js/tabs/tab-material.js"></script>
+<script src="js/tabs/tab-consumption.js"></script>
+<script src="js/tabs/tab-simulation.js"></script>
+<script src="js/tabs/tab-financial.js"></script>
+
+<!-- Point d'entrée -->
+<script src="js/project-header.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
