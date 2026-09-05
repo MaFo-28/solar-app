@@ -3,24 +3,35 @@
  * Onglet 6 — Bilan financier. Viendra agréger tous les autres onglets
  * (économies annuelles, temps de retour sur investissement, courbe de
  * rentabilité cumulée) ; pour l'instant : prix de l'installation,
- * production mensuelle réaliste (PVGIS) et dégradation des panneaux
- * dans le temps.
+ * production mensuelle réaliste (PVGIS), dégradation des panneaux dans
+ * le temps, et rapport de consommation (import d'un répertoire de
+ * fichiers journaliers, calcul HC/HP indépendant de la production).
  *
  * Le matériel pris en compte est celui du profil d'installation
  * sélectionné ici (state.installationProfiles) — pas les bases de
  * l'onglet Matériel, qui ne font que lister les modèles disponibles
  * sans notion de "installé".
+ *
+ * Le répertoire de consommation (365 fichiers CSV) n'est pas persisté
+ * dans le projet ni dans localStorage : c'est une donnée volumineuse
+ * (365 x 96 valeurs) qui vit déjà sur le disque de l'utilisateur —
+ * seul le rapport mensuel calculé serait pertinent à sauvegarder, mais
+ * ça n'est pas demandé pour l'instant. Il faut donc réimporter le
+ * répertoire à chaque session.
  */
 window.TabFinancial = (function () {
   "use strict";
 
   let monthlyChart = null;
   let degradationChart = null;
+  let consumptionDayCache = null; // { "MM-DD": [96 valeurs W] } une fois un répertoire validé, sinon null
 
   function init() {
     renderInstallSelect();
     recompute();
     bindDatabaseChangeListener();
+    bindConsumptionDirectory();
+    renderConsumptionReport();
   }
 
   // ------------------------------------------------------------------
@@ -69,6 +80,7 @@ window.TabFinancial = (function () {
       ) {
         renderInstallSelect();
         recompute();
+        if (path === "location") renderConsumptionReport(); // tarifs HC/HP potentiellement modifiés
       }
     });
   }
@@ -282,6 +294,293 @@ window.TabFinancial = (function () {
         },
       },
     });
+  }
+
+  // ------------------------------------------------------------------
+  // Profil de consommation : import d'un répertoire de 365 fichiers
+  // journaliers (un par jour de l'année, nommés MM-DD.csv), avec
+  // vérification stricte du format avant tout calcul — voir
+  // validateConsumptionDirectory ci-dessous pour le détail des règles.
+  // ------------------------------------------------------------------
+  const EXPECTED_TIMES = buildExpectedTimes();
+  const NUMBER_RE = /^-?\d+(\.\d+)?$/;
+
+  function buildExpectedTimes() {
+    const times = [];
+    for (let h = 0; h < 24; h++) {
+      for (let q = 0; q < 4; q++) {
+        times.push(String(h).padStart(2, "0") + ":" + String(q * 15).padStart(2, "0"));
+      }
+    }
+    return times;
+  }
+
+  /** Les 365 clés "MM-DD" attendues, dans l'ordre du calendrier. */
+  function expectedDayKeys() {
+    const U = window.ConsumptionUtils;
+    const keys = [];
+    for (let m = 0; m < 12; m++) {
+      for (let d = 1; d <= U.DAYS_IN_MONTH[m]; d++) {
+        keys.push(String(m + 1).padStart(2, "0") + "-" + String(d).padStart(2, "0"));
+      }
+    }
+    return keys;
+  }
+
+  function bindConsumptionDirectory() {
+    window.bindOnce(document.getElementById("financial-consumption-dir-select"), "click", async function () {
+      if (window.showDirectoryPicker) {
+        try {
+          const dirHandle = await window.showDirectoryPicker();
+          const files = [];
+          for await (const [name, handle] of dirHandle.entries()) {
+            if (handle.kind === "file" && /\.csv$/i.test(name)) {
+              const file = await handle.getFile();
+              files.push({ name, text: await file.text() });
+            }
+          }
+          processConsumptionDirectory(dirHandle.name, files);
+        } catch (err) {
+          if (err && err.name === "AbortError") return;
+          console.warn(err);
+          setConsumptionStatus("Erreur : impossible de lire ce répertoire.", []);
+        }
+        return;
+      }
+      // Repli (Firefox, Safari) : sélecteur de répertoire classique via
+      // input file + webkitdirectory, mêmes principes que le picker natif.
+      document.getElementById("financial-consumption-dir-input").click();
+    });
+
+    window.bindOnce(document.getElementById("financial-consumption-dir-input"), "change", function (e) {
+      const fileList = Array.from(e.target.files || []);
+      e.target.value = ""; // permet de réimporter le même répertoire deux fois de suite
+      if (fileList.length === 0) return;
+      const csvFiles = fileList.filter((f) => /\.csv$/i.test(f.name));
+      const dirName = (fileList[0].webkitRelativePath || fileList[0].name).split("/")[0];
+      const reads = csvFiles.map(
+        (f) =>
+          new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (ev) => resolve({ name: f.name, text: ev.target.result });
+            reader.onerror = () => reject(new Error("lecture impossible : " + f.name));
+            reader.readAsText(f);
+          })
+      );
+      Promise.all(reads)
+        .then((files) => processConsumptionDirectory(dirName, files))
+        .catch((err) => setConsumptionStatus("Erreur : " + err.message, []));
+    });
+  }
+
+  function processConsumptionDirectory(dirName, files) {
+    const result = validateConsumptionDirectory(files);
+    document.getElementById("financial-consumption-dir-name").textContent = dirName;
+    if (!result.valid) {
+      consumptionDayCache = null;
+      setConsumptionStatus(
+        result.errors.length + " erreur(s) trouvée(s) — répertoire rejeté, corrigez les fichiers puis réimportez.",
+        result.errors
+      );
+      renderConsumptionReport();
+      return;
+    }
+    consumptionDayCache = result.days;
+    setConsumptionStatus("✓ Répertoire valide : 365 fichiers chargés.", []);
+    renderConsumptionReport();
+  }
+
+  function setConsumptionStatus(text, errors) {
+    document.getElementById("financial-consumption-status").textContent = text;
+    const list = document.getElementById("financial-consumption-errors");
+    if (!errors || errors.length === 0) {
+      list.style.display = "none";
+      list.innerHTML = "";
+    } else {
+      list.innerHTML = errors.map((e) => "<li>" + escapeHtml(e) + "</li>").join("");
+      list.style.display = "block";
+    }
+  }
+
+  /**
+   * Valide un répertoire de consommation en 2 passes, dans cet ordre :
+   *  1) l'ensemble des noms de fichiers (365 attendus, aucun manquant,
+   *     aucun en trop, aucun mal nommé/doublon) ;
+   *  2) le contenu de chaque fichier (en-tête, nombre de lignes, heures,
+   *     valeurs numériques) — seulement si la passe 1 est déjà propre,
+   *     pour ne pas noyer l'utilisateur sous des erreurs de contenu
+   *     quand le vrai problème est un fichier manquant ou mal nommé.
+   *
+   * Retourne { valid, errors, days } où days est { "MM-DD": [96 W] }
+   * si valid, sinon null.
+   */
+  function validateConsumptionDirectory(files) {
+    const errors = [];
+    const byKey = {};
+    const nameRe = /^(\d{2})-(\d{2})\.csv$/i;
+    const expected = expectedDayKeys();
+    const expectedSet = new Set(expected);
+
+    files.forEach((f) => {
+      const m = nameRe.exec(f.name);
+      if (!m) {
+        errors.push(f.name + " : nom de fichier invalide (attendu MM-DD.csv).");
+        return;
+      }
+      const key = m[1] + "-" + m[2];
+      if (!expectedSet.has(key)) {
+        errors.push(f.name + " : date inexistante dans le calendrier (mois ou jour invalide).");
+        return;
+      }
+      if (byKey[key]) {
+        errors.push(f.name + " : doublon (un autre fichier correspond déjà à " + key + ".csv).");
+        return;
+      }
+      byKey[key] = f.text;
+    });
+
+    expected.forEach((key) => {
+      if (!byKey[key]) errors.push(key + ".csv : fichier manquant.");
+    });
+
+    if (errors.length > 0) return { valid: false, errors, days: null };
+
+    const days = {};
+    expected.forEach((key) => {
+      const values = parseDayFile(key + ".csv", byKey[key], errors);
+      if (values) days[key] = values;
+    });
+
+    if (errors.length > 0) return { valid: false, errors, days: null };
+    return { valid: true, errors: [], days };
+  }
+
+  /**
+   * Valide et parse un fichier journalier ("heure;puissance_w", 96
+   * lignes de 00:00 à 23:45 par pas de 15 min). Retourne le tableau des
+   * 96 puissances (W) si tout est conforme, sinon null (les erreurs
+   * précises sont poussées dans le tableau `errors` partagé).
+   */
+  function parseDayFile(fileName, text, errors) {
+    let raw = text;
+    if (raw.charCodeAt(0) === 0xfeff) raw = raw.slice(1); // BOM éventuel (export Excel)
+    const lines = raw.split(/\r?\n/);
+    while (lines.length > 0 && lines[lines.length - 1].trim() === "") lines.pop();
+
+    if (lines.length !== 97) {
+      errors.push(
+        fileName + " : " + lines.length + " ligne(s) trouvée(s), 97 attendues (1 en-tête + 96 lignes de données)."
+      );
+      return null;
+    }
+    if (lines[0].trim() !== "heure;puissance_w") {
+      errors.push(fileName + ' : en-tête invalide ("' + lines[0].trim() + '", attendu "heure;puissance_w").');
+      return null;
+    }
+
+    const values = new Array(96);
+    let ok = true;
+    for (let i = 0; i < 96; i++) {
+      const cells = lines[i + 1].split(";");
+      const lineNo = i + 2;
+      if (cells.length !== 2) {
+        errors.push(fileName + " ligne " + lineNo + ' : format invalide ("' + lines[i + 1] + '").');
+        ok = false;
+        continue;
+      }
+      const time = cells[0].trim();
+      if (time !== EXPECTED_TIMES[i]) {
+        errors.push(fileName + " ligne " + lineNo + " : heure attendue " + EXPECTED_TIMES[i] + ", trouvée " + time + ".");
+        ok = false;
+      }
+      const valueStr = cells[1].trim();
+      if (!NUMBER_RE.test(valueStr)) {
+        errors.push(fileName + " ligne " + lineNo + ' : valeur de puissance invalide ("' + valueStr + '").');
+        ok = false;
+        continue;
+      }
+      values[i] = parseFloat(valueStr);
+    }
+    return ok ? values : null;
+  }
+
+  /**
+   * Rapport mensuel HC/HP : pur calcul consommation × tarifs, sans lien
+   * avec la production solaire ou la batterie. Chaque journée (96
+   * valeurs à pas de 15 min) est convertie en "plages" de 15 min pour
+   * réutiliser telle quelle dayCost() — la même fonction qui sert déjà
+   * au coût du jour et au calendrier de l'onglet Consommation — plutôt
+   * que de recalculer la répartition HC/HP séparément ici.
+   */
+  function computeConsumptionReport(days, tariffs) {
+    const U = window.ConsumptionUtils;
+    const months = [];
+    for (let m = 0; m < 12; m++) {
+      const totals = { hpKwh: 0, hcKwh: 0, hpCost: 0, hcCost: 0 };
+      for (let d = 1; d <= U.DAYS_IN_MONTH[m]; d++) {
+        const key = String(m + 1).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+        const values = days[key];
+        const segments = values.map((v, i) => ({ startHour: i * 0.25, endHour: i * 0.25 + 0.25, powerW: v }));
+        const day = U.dayCost(segments, tariffs);
+        totals.hpKwh += day.hpKwh;
+        totals.hcKwh += day.hcKwh;
+        totals.hpCost += day.hp;
+        totals.hcCost += day.hc;
+      }
+      months.push(totals);
+    }
+    return months;
+  }
+
+  function consumptionReportRowHtml(label, t, isTotal) {
+    const totalKwh = t.hpKwh + t.hcKwh;
+    const totalCost = t.hpCost + t.hcCost;
+    const style = isTotal ? ' style="font-weight:600;"' : "";
+    return (
+      "<tr" + style + "><td>" + escapeHtml(label) + "</td>" +
+      "<td>" + t.hpKwh.toFixed(2) + "</td>" +
+      "<td>" + t.hcKwh.toFixed(2) + "</td>" +
+      "<td>" + totalKwh.toFixed(2) + "</td>" +
+      "<td>" + t.hpCost.toFixed(2) + "</td>" +
+      "<td>" + t.hcCost.toFixed(2) + "</td>" +
+      "<td>" + totalCost.toFixed(2) + "</td></tr>"
+    );
+  }
+
+  function renderConsumptionReport() {
+    const hint = document.getElementById("financial-consumption-report-hint");
+    const table = document.getElementById("financial-consumption-report-table");
+    if (!consumptionDayCache) {
+      hint.style.display = "block";
+      table.style.display = "none";
+      return;
+    }
+
+    const U = window.ConsumptionUtils;
+    const tariffs = window.AppState.get().location.tariffs;
+    const months = computeConsumptionReport(consumptionDayCache, tariffs);
+    const grand = months.reduce(
+      (acc, t) => ({
+        hpKwh: acc.hpKwh + t.hpKwh,
+        hcKwh: acc.hcKwh + t.hcKwh,
+        hpCost: acc.hpCost + t.hpCost,
+        hcCost: acc.hcCost + t.hcCost,
+      }),
+      { hpKwh: 0, hcKwh: 0, hpCost: 0, hcCost: 0 }
+    );
+
+    document.getElementById("financial-consumption-report-body").innerHTML = months
+      .map((t, i) => consumptionReportRowHtml(U.MONTH_NAMES[i], t))
+      .join("");
+    document.getElementById("financial-consumption-report-foot").innerHTML =
+      consumptionReportRowHtml("Total annuel", grand, true);
+
+    hint.style.display = "none";
+    table.style.display = "";
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 
   return { init };

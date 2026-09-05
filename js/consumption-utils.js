@@ -101,6 +101,8 @@ window.ConsumptionUtils = (function () {
     let total = 0;
     let hc = 0;
     let hp = 0;
+    let hcKwh = 0;
+    let hpKwh = 0;
     for (let i = 0; i < bps.length - 1; i++) {
       const t0 = bps[i];
       const t1 = bps[i + 1];
@@ -112,10 +114,10 @@ window.ConsumptionUtils = (function () {
       kwh += intervalKwh;
       total += cost;
       const category = classifyTariff(tariff);
-      if (category === "hc") hc += cost;
-      else if (category === "hp") hp += cost;
+      if (category === "hc") { hc += cost; hcKwh += intervalKwh; }
+      else if (category === "hp") { hp += cost; hpKwh += intervalKwh; }
     }
-    return { kwh, total, hc, hp };
+    return { kwh, total, hc, hp, hcKwh, hpKwh };
   }
 
   /**
@@ -128,7 +130,7 @@ window.ConsumptionUtils = (function () {
    */
   function calendarAnnualCost(calendar, profiles, tariffs) {
     const cache = {};
-    const totals = { kwh: 0, total: 0, hc: 0, hp: 0 };
+    const totals = { kwh: 0, total: 0, hc: 0, hp: 0, hcKwh: 0, hpKwh: 0 };
     (calendar || []).forEach((lines) => {
       (lines || []).forEach((line) => {
         const profile = (profiles || []).find((p) => p.id === line.profileId);
@@ -140,6 +142,8 @@ window.ConsumptionUtils = (function () {
         totals.total += per.total * days;
         totals.hc += per.hc * days;
         totals.hp += per.hp * days;
+        totals.hcKwh += per.hcKwh * days;
+        totals.hpKwh += per.hpKwh * days;
       });
     });
     return totals;
