@@ -50,6 +50,7 @@ window.TabConsumption = (function () {
     renderCalendar();
     renderCalendarCosts();
     bindTariffChangeListener();
+    bindCalendarExport();
   }
 
   /**
@@ -371,6 +372,112 @@ window.TabConsumption = (function () {
         (incomplete.length > 1 ? " mois" : " mois") + " — le coût annuel est donc incomplet : " +
         incomplete.join(", ") + ".";
     }
+
+    // Le bouton "Convertir en fichiers journaliers" n'a de sens que si
+    // l'année est complète (même vérification que ci-dessus, réutilisée
+    // plutôt que recalculée).
+    document.getElementById("consumption-calendar-export").disabled = incomplete.length > 0;
+  }
+
+  // ------------------------------------------------------------------
+  // Conversion du calendrier en fichiers journaliers (365 CSV, un par
+  // jour de l'année) : déroule les lignes de chaque mois dans leur
+  // ordre d'affichage, répète chaque profil le nombre de jours indiqué,
+  // et écrit un fichier MM-DD.csv par jour ainsi généré. Nécessite un
+  // navigateur avec l'API File System Access (Chrome/Edge) : il n'y a
+  // pas d'équivalent pour écrire un répertoire entier de fichiers dans
+  // les autres navigateurs (limitation du navigateur, pas de l'appli —
+  // même principe déjà documenté pour Charger/Enregistrer projet).
+  // ------------------------------------------------------------------
+  const QUARTER_HOUR_LABELS = buildQuarterHourLabels();
+
+  function buildQuarterHourLabels() {
+    const labels = [];
+    for (let h = 0; h < 24; h++) {
+      for (let q = 0; q < 4; q++) {
+        labels.push(String(h).padStart(2, "0") + ":" + String(q * 15).padStart(2, "0"));
+      }
+    }
+    return labels;
+  }
+
+  /** Format attendu par l'import du répertoire de consommation (onglet Bilan financier). */
+  function buildDayCsv(values96) {
+    const lines = ["heure;puissance_w"];
+    for (let i = 0; i < 96; i++) {
+      const v = values96[i];
+      lines.push(QUARTER_HOUR_LABELS[i] + ";" + (Math.abs(v) < 1e-9 ? 0 : v).toFixed(2));
+    }
+    return lines.join("\r\n") + "\r\n";
+  }
+
+  function bindCalendarExport() {
+    window.bindOnce(document.getElementById("consumption-calendar-export"), "click", async function () {
+      const statusEl = document.getElementById("consumption-calendar-export-status");
+      const s = window.AppState.get();
+      const U = window.ConsumptionUtils;
+      const calendar = s.consumption.calendar;
+      const profiles = s.consumption.profiles || [];
+
+      // Garde-fou : le bouton est désactivé si l'année n'est pas complète
+      // (voir renderCalendarCosts), mais on revérifie ici au cas où
+      // l'état aurait changé entre le rendu du bouton et le clic.
+      const incomplete = calendar.some((lines, m) => U.monthAssignedDays(lines) !== U.DAYS_IN_MONTH[m]);
+      if (incomplete) {
+        statusEl.textContent = "L'année n'est pas complète : corrigez le calendrier avant de convertir.";
+        return;
+      }
+
+      if (!window.showDirectoryPicker) {
+        statusEl.textContent =
+          "Cette fonction nécessite un navigateur compatible (Chrome, Edge) : l'écriture d'un répertoire de fichiers n'est pas possible ici.";
+        return;
+      }
+
+      let dirHandle;
+      try {
+        dirHandle = await window.showDirectoryPicker({ mode: "readwrite" });
+      } catch (err) {
+        if (err && err.name === "AbortError") return;
+        statusEl.textContent = "Erreur : impossible d'ouvrir ce répertoire en écriture.";
+        console.warn(err);
+        return;
+      }
+
+      statusEl.textContent = "Génération en cours…";
+
+      const averagesCache = {};
+      function averagesFor(profileId) {
+        if (!averagesCache[profileId]) {
+          const profile = profiles.find((p) => p.id === profileId);
+          averagesCache[profileId] = U.segmentsToQuarterHourAverages(profile ? profile.segments : []);
+        }
+        return averagesCache[profileId];
+      }
+
+      try {
+        let written = 0;
+        for (let m = 0; m < 12; m++) {
+          let day = 1;
+          for (const line of calendar[m]) {
+            const csv = buildDayCsv(averagesFor(line.profileId));
+            for (let n = 0; n < (line.days || 0); n++) {
+              const fileName = String(m + 1).padStart(2, "0") + "-" + String(day).padStart(2, "0") + ".csv";
+              const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
+              const writable = await fileHandle.createWritable();
+              await writable.write(csv);
+              await writable.close();
+              day++;
+              written++;
+            }
+          }
+        }
+        statusEl.textContent = "✓ " + written + " fichiers journaliers générés dans le répertoire choisi.";
+      } catch (err) {
+        statusEl.textContent = "Erreur pendant l'écriture des fichiers : " + err.message;
+        console.warn(err);
+      }
+    });
   }
 
   function escapeHtml(str) {

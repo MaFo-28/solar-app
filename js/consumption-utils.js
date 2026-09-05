@@ -154,6 +154,32 @@ window.ConsumptionUtils = (function () {
     return (lines || []).reduce((sum, line) => sum + (line.days || 0), 0);
   }
 
+  /**
+   * Moyenne les plages de consommation (puissance constante par plage,
+   * bornes arbitraires) en 96 valeurs à pas de 15 min — moyenne pondérée
+   * par le temps sur chaque quart d'heure, pas un simple échantillonnage
+   * à son début (une plage qui commence à 6h30 ne doit pas être ignorée
+   * ou surestimée sur le quart d'heure 6h15-6h30).
+   */
+  function segmentsToQuarterHourAverages(segments) {
+    const bps = getBreakpoints(segments); // tariffs omis : uniquement les bornes des plages
+    const values = new Array(96);
+    for (let i = 0; i < 96; i++) {
+      const t0 = i * 0.25;
+      const t1 = t0 + 0.25;
+      const marks = [t0].concat(bps.filter((b) => b > t0 && b < t1).sort((a, b) => a - b), [t1]);
+      let energy = 0;
+      for (let k = 0; k < marks.length - 1; k++) {
+        const a = marks[k];
+        const b = marks[k + 1];
+        if (b <= a) continue;
+        energy += powerAtHour(segments, a) * (b - a);
+      }
+      values[i] = energy / 0.25;
+    }
+    return values;
+  }
+
   return {
     powerAtHour,
     tariffForHour,
@@ -164,5 +190,6 @@ window.ConsumptionUtils = (function () {
     dayCost,
     calendarAnnualCost,
     monthAssignedDays,
+    segmentsToQuarterHourAverages,
   };
 })();
