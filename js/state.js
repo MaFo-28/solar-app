@@ -67,6 +67,13 @@ window.AppState = (function () {
     };
   }
 
+  /** Calendrier vierge : 12 mois sans aucune ligne. */
+  function emptyCalendar() {
+    const months = [];
+    for (let m = 0; m < 12; m++) months.push([]);
+    return months;
+  }
+
   function defaultState() {
     return {
       version: 1,
@@ -125,6 +132,12 @@ window.AppState = (function () {
         // profil est affiché/édité à la fois.
         profiles: [{ id: "consumption-profile-1", name: "Défaut", segments: [] }],
         activeProfileId: "consumption-profile-1",
+        // Calendrier annuel : 12 mois (index 0 = janvier), chacun
+        // portant des lignes { id, profileId, days }. Un même profil
+        // peut revenir plusieurs fois dans un mois ; la somme des jours
+        // d'un mois doit valoir le nombre de jours du mois. Vide par
+        // défaut : c'est à l'utilisateur de répartir son année.
+        calendar: emptyCalendar(),
       },
       // Base de données des installations (onglet Installation) : le
       // matériel installé et ses stratégies, hors de l'onglet
@@ -330,6 +343,28 @@ window.AppState = (function () {
     return cfg;
   }
 
+  /**
+   * Remet le calendrier annuel dans une forme sûre : toujours 12 mois,
+   * et seulement des lignes dont le profil existe encore. Sans ce
+   * filtrage, supprimer un profil laisserait des lignes fantômes qui
+   * fausseraient silencieusement le compte de jours du mois.
+   */
+  function normalizeCalendar(loadedCalendar, profiles) {
+    const months = emptyCalendar();
+    if (!Array.isArray(loadedCalendar)) return months;
+    for (let m = 0; m < 12; m++) {
+      const lines = Array.isArray(loadedCalendar[m]) ? loadedCalendar[m] : [];
+      months[m] = lines
+        .filter((line) => line && profiles.some((p) => p.id === line.profileId))
+        .map((line) => ({
+          id: line.id || genId("calendar-line"),
+          profileId: line.profileId,
+          days: typeof line.days === "number" ? line.days : 0,
+        }));
+    }
+    return months;
+  }
+
   function mergeWithDefaults(loaded) {
     const def = defaultState();
     if (!loaded || typeof loaded !== "object") return def;
@@ -359,6 +394,10 @@ window.AppState = (function () {
     const consumptionData = migrateConsumptionProfiles(loaded.consumption, def.consumption);
     merged.consumption.profiles = consumptionData.profiles;
     merged.consumption.activeProfileId = consumptionData.activeProfileId;
+    merged.consumption.calendar = normalizeCalendar(
+      loaded.consumption && loaded.consumption.calendar,
+      merged.consumption.profiles
+    );
     delete merged.consumption.hourlyProfileW; // ancien champ, remplacé par profiles[].segments
 
     const installationData = migrateInstallationProfiles(loaded, def);

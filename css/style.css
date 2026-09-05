@@ -416,6 +416,73 @@ table.data-table {
   outline: none;
 }
 
+.data-table select {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: var(--font-data);
+  font-size: 12px;
+  padding: 4px 6px;
+  outline: none;
+}
+
+.data-table select:focus { border-color: var(--accent-solar); }
+
+/* ============================================================
+   Calendrier de consommation : 12 blocs mensuels
+   ============================================================ */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.calendar-month {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+}
+
+.calendar-month__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.calendar-month__name {
+  flex: 1;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+}
+
+/* Compteur de jours : vert quand le mois est complet, rouge sinon —
+   c'est le repère visuel principal pour boucler la répartition */
+.calendar-month__count {
+  font-family: var(--font-data);
+  font-size: 11px;
+  color: var(--accent-battery);
+}
+
+.calendar-month__count.is-invalid { color: var(--accent-danger); }
+
+.calendar-month__empty {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin: 4px 0 0;
+}
+
+@media (max-width: 760px) {
+  .calendar-grid { grid-template-columns: 1fr; }
+}
+
 /* ============================================================
    Graphiques
    ============================================================ */

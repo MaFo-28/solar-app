@@ -471,7 +471,7 @@
   </section>
 
   <!-- ============================================================
-       ONGLET 5 — CONSOMMATION
+       ONGLET 4 — CONSOMMATION
        ============================================================ -->
   <section id="tab-consumption" class="tab-panel">
 
@@ -529,10 +529,33 @@
         <tbody id="consumption-segment-table-body"></tbody>
       </table>
     </div>
+
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Calendrier de consommation</h2>
+      </div>
+      <div class="stat-row" style="margin-bottom:14px;">
+        <div class="stat">
+          <span class="stat__label">Coût annuel — Heures Creuses</span>
+          <span class="stat__value stat__value--equinox"><span id="stat-calendar-cost-hc">—</span><span class="stat__unit">€</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Coût annuel — Heures Pleines</span>
+          <span class="stat__value"><span id="stat-calendar-cost-hp">—</span><span class="stat__unit">€</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Coût annuel — Total</span>
+          <span class="stat__value stat__value--battery"><span id="stat-calendar-cost-total">—</span><span class="stat__unit">€</span></span>
+        </div>
+      </div>
+      <p id="consumption-calendar-warning" class="field__hint" style="display:none; color:var(--accent-danger); margin-bottom:8px;"></p>
+      <p class="field__hint">Répartissez vos profils journaliers sur les 12 mois : une ligne = un profil appliqué pendant un certain nombre de jours. Un même profil peut revenir plusieurs fois dans un mois, et le nombre de lignes est libre. Pour que le coût annuel soit juste, le total des jours de chaque mois doit être exactement égal au nombre de jours du mois (année non bissextile, 365 jours). Ajustez la répartition pour vous rapprocher de votre facture réelle.</p>
+      <div id="consumption-calendar-body" class="calendar-grid"></div>
+    </div>
   </section>
 
   <!-- ============================================================
-       ONGLET 4 — INSTALLATION (base de données des installations)
+       ONGLET 3 — INSTALLATION (base de données des installations)
        ============================================================ -->
   <section id="tab-installation" class="tab-panel">
 

@@ -2,7 +2,7 @@
  * consumption-utils.js
  *
  * Fonctions pures partagées entre l'onglet Consommation et le
- * simulateur de l'onglet Stratégie. Centralisées ici pour ne pas
+ * simulateur de l'onglet Simulation. Centralisées ici pour ne pas
  * dupliquer la même logique deux fois (comme horizon-mask.js pour
  * les onglets Localisation/Panneaux).
  */
@@ -76,5 +76,89 @@ window.ConsumptionUtils = (function () {
       .sort((a, b) => a - b);
   }
 
-  return { powerAtHour, tariffForHour, classifyTariff, getBreakpoints };
+  // ------------------------------------------------------------------
+  // Calendrier annuel : répartition des profils journaliers sur les
+  // 12 mois. Année non bissextile (365 jours) pour que le coût annuel
+  // reste déterministe d'un projet à l'autre.
+  // ------------------------------------------------------------------
+  const MONTH_NAMES = [
+    "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
+  ];
+
+  const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+  /**
+   * Consommation et coût d'UNE journée pour un profil donné, décomposés
+   * en Heures Creuses / Heures Pleines. Calcul exact par points de
+   * rupture : entre deux points, puissance et tarif sont constants, donc
+   * pas d'erreur d'échantillonnage (contrairement à un pas horaire fixe
+   * qui raterait une plage de 6h30 à 7h15).
+   */
+  function dayCost(segments, tariffs) {
+    const bps = getBreakpoints(segments, tariffs);
+    let kwh = 0;
+    let total = 0;
+    let hc = 0;
+    let hp = 0;
+    for (let i = 0; i < bps.length - 1; i++) {
+      const t0 = bps[i];
+      const t1 = bps[i + 1];
+      if (t1 <= t0) continue;
+      const powerW = powerAtHour(segments, t0);
+      const tariff = tariffForHour(tariffs, t0);
+      const intervalKwh = (powerW / 1000) * (t1 - t0);
+      const cost = intervalKwh * (tariff ? tariff.pricePerKwh : 0);
+      kwh += intervalKwh;
+      total += cost;
+      const category = classifyTariff(tariff);
+      if (category === "hc") hc += cost;
+      else if (category === "hp") hp += cost;
+    }
+    return { kwh, total, hc, hp };
+  }
+
+  /**
+   * Total annuel d'un calendrier : pour chaque ligne, le coût d'une
+   * journée du profil référencé multiplié par son nombre de jours. Le
+   * coût journalier de chaque profil n'est calculé qu'une fois (un même
+   * profil revient dans plusieurs mois).
+   *
+   * Les lignes qui référencent un profil supprimé sont ignorées.
+   */
+  function calendarAnnualCost(calendar, profiles, tariffs) {
+    const cache = {};
+    const totals = { kwh: 0, total: 0, hc: 0, hp: 0 };
+    (calendar || []).forEach((lines) => {
+      (lines || []).forEach((line) => {
+        const profile = (profiles || []).find((p) => p.id === line.profileId);
+        if (!profile) return;
+        if (!cache[profile.id]) cache[profile.id] = dayCost(profile.segments, tariffs);
+        const per = cache[profile.id];
+        const days = line.days || 0;
+        totals.kwh += per.kwh * days;
+        totals.total += per.total * days;
+        totals.hc += per.hc * days;
+        totals.hp += per.hp * days;
+      });
+    });
+    return totals;
+  }
+
+  /** Somme des jours déjà répartis sur un mois. */
+  function monthAssignedDays(lines) {
+    return (lines || []).reduce((sum, line) => sum + (line.days || 0), 0);
+  }
+
+  return {
+    powerAtHour,
+    tariffForHour,
+    classifyTariff,
+    getBreakpoints,
+    MONTH_NAMES,
+    DAYS_IN_MONTH,
+    dayCost,
+    calendarAnnualCost,
+    monthAssignedDays,
+  };
 })();
