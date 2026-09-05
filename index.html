@@ -37,8 +37,8 @@
 <nav class="tab-nav">
   <button class="tab-nav__item" data-tab="location"><span class="tab-nav__index">01</span> Localisation</button>
   <button class="tab-nav__item" data-tab="material"><span class="tab-nav__index">02</span> Matériel</button>
-  <button class="tab-nav__item" data-tab="consumption"><span class="tab-nav__index">03</span> Consommation</button>
-  <button class="tab-nav__item" data-tab="installation"><span class="tab-nav__index">04</span> Installation</button>
+  <button class="tab-nav__item" data-tab="installation"><span class="tab-nav__index">03</span> Installation</button>
+  <button class="tab-nav__item" data-tab="consumption"><span class="tab-nav__index">04</span> Consommation</button>
   <button class="tab-nav__item" data-tab="simulation"><span class="tab-nav__index">05</span> Simulation</button>
   <button class="tab-nav__item" data-tab="financial"><span class="tab-nav__index">06</span> Bilan financier</button>
 </nav>
@@ -489,7 +489,7 @@
         <button id="consumption-profile-rename" class="btn btn--sm btn--ghost">Renommer</button>
         <button id="consumption-profile-delete" class="btn btn--sm btn--ghost">Supprimer</button>
       </div>
-      <p class="field__hint">Créez un profil par cas d'usage (ex. "Semaine", "Week-end", "Été sans clim"). Un seul profil est affiché/édité à la fois.</p>
+      <p class="field__hint">Créez un profil par cas d'usage (ex. "Semaine", "Week-end", "Été sans clim").</p>
     </div>
 
     <div class="card">
@@ -725,7 +725,7 @@
       <div class="card__header">
         <h2 class="card__title">Production horaire théorique</h2>
       </div>
-      <p class="field__hint">Puissance instantanée selon l'orientation, l'inclinaison et le masquage du profil d'ombre choisi. Suppose un ciel parfaitement clair (sans nuage), avec l'atténuation atmosphérique naturelle selon la hauteur du soleil (plus faible à l'horizon) : c'est un maximum théorique par temps clair, pas une prévision réelle (nuages non inclus, voir la production mensuelle PVGIS ci-dessous pour ça). Heures en heure réelle française (été/équinoxe : UTC+2, hiver : UTC+1) — pas en heure solaire.</p>
+      <p class="field__hint">Puissance instantanée selon le profil d'installation choisi. Suppose un ciel parfaitement clair (sans nuage), avec l'atténuation atmosphérique naturelle selon la hauteur du soleil (plus faible à l'horizon) : c'est un maximum théorique par temps clair, pas une prévision réelle (nuages non inclus, voir la production mensuelle PVGIS pour ça). Heures en heure réelle française (été/équinoxe : UTC+2, hiver : UTC+1) — pas en heure solaire.</p>
       <div class="chart-wrap" style="margin-top:12px;">
         <canvas id="chart-panel-power"></canvas>
       </div>
