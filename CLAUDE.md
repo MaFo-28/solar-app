@@ -118,3 +118,15 @@ coûts, économies, ROI, etc. — pas encore défini, ne pas anticiper.
 ## Style de réponse attendu
 - Va à l'essentiel : diffs, code, ou explication technique ciblée plutôt que
   de longues reformulations.
+
+## Git
+Le projet est versionné avec git. Conventions à respecter :
+- **Un commit par étape logique** de la refonte en cours (ex. un commit pour
+  l'onglet Installation, un autre pour le déplacement du calendrier dans
+  Consommation), plutôt qu'un seul gros commit en fin de tâche.
+- **Message de commit concis**, à l'impératif, en français
+  (ex. `Ajoute l'onglet Installation avec section Prix`)
+- **Ne jamais committer sans validation explicite** : chaque `git commit` doit
+  m'être proposé avant exécution, comme toute autre commande.
+- **Ne pas faire de `git push`** sans demande explicite de ma part (le dépôt
+  reste local pour l'instant).
