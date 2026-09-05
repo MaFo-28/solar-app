@@ -2,9 +2,9 @@
  * tab-financial.js
  * Onglet 6 — Bilan financier. Viendra agréger tous les autres onglets
  * (économies annuelles, temps de retour sur investissement, courbe de
- * rentabilité cumulée) ; pour l'instant : coût matériel, production
- * mensuelle réaliste (PVGIS) et dégradation des panneaux dans le
- * temps.
+ * rentabilité cumulée) ; pour l'instant : prix de l'installation,
+ * production mensuelle réaliste (PVGIS) et dégradation des panneaux
+ * dans le temps.
  *
  * Le matériel pris en compte est celui du profil d'installation
  * sélectionné ici (state.installationProfiles) — pas les bases de
@@ -82,7 +82,7 @@ window.TabFinancial = (function () {
   function recompute() {
     const install = getSelectedProfile();
     if (!install) return;
-    renderMaterialCost(install);
+    renderInstallationPrice(install);
 
     const s = window.AppState.get();
     const loc = s.location;
@@ -101,29 +101,31 @@ window.TabFinancial = (function () {
   }
 
   // ------------------------------------------------------------------
-  // Coût matériel
+  // Prix de l'installation — même décomposition que l'onglet
+  // Installation (Panneaux / Onduleur / Batterie / Autre / Total),
+  // pour le profil sélectionné ici.
   // ------------------------------------------------------------------
-  function renderMaterialCost(install) {
+  function renderInstallationPrice(install) {
     const s = window.AppState.get();
 
-    let panelCost = 0;
     const panel = (s.panelsDatabase || []).find((p) => p.id === install.panels.selectedModelId);
-    if (panel) panelCost = panel.priceEur * install.panels.count;
+    const panelPrice = panel ? panel.priceEur * install.panels.count : 0;
 
-    let inverterCost = 0;
     const inverter = (s.invertersDatabase || []).find((i) => i.id === install.inverter.selectedModelId);
-    if (inverter) inverterCost = inverter.priceEur;
+    const inverterPrice = inverter ? inverter.priceEur : 0;
 
     // Une seule batterie par installation, donc pas de multiplicateur.
-    let batteryCost = 0;
     const battery = (s.batteriesDatabase || []).find((b) => b.id === install.battery.selectedModelId);
-    if (battery) batteryCost = battery.priceEur;
+    const batteryPrice = battery ? battery.priceEur : 0;
 
-    const total = panelCost + inverterCost + batteryCost;
+    const otherPrice = (install.fixedCosts || []).reduce((sum, line) => sum + (line.priceEur || 0), 0);
 
-    document.getElementById("stat-cost-panels").textContent = panelCost.toFixed(0);
-    document.getElementById("stat-cost-inverter").textContent = inverterCost.toFixed(0);
-    document.getElementById("stat-cost-battery").textContent = batteryCost.toFixed(0);
+    const total = panelPrice + inverterPrice + batteryPrice + otherPrice;
+
+    document.getElementById("stat-cost-panels").textContent = panelPrice.toFixed(0);
+    document.getElementById("stat-cost-inverter").textContent = inverterPrice.toFixed(0);
+    document.getElementById("stat-cost-battery").textContent = batteryPrice.toFixed(0);
+    document.getElementById("stat-cost-other").textContent = otherPrice.toFixed(0);
     document.getElementById("stat-cost-total").textContent = total.toFixed(0);
   }
 

@@ -216,7 +216,7 @@
 
     <div class="card">
       <div class="card__header">
-        <h2 class="card__title">Données PVGIS (irradiance réelle)</h2>
+        <h2 class="card__title">Données mensuelles PVGIS (irradiance réelle)</h2>
         <button id="loc-open-pvgis" class="btn btn--sm">Ouvrir PVGIS</button>
       </div>
       <p class="field__hint">PVGIS bloque volontairement les requêtes automatiques depuis un navigateur : on ouvre la donnée dans un nouvel onglet, vous copiez tout (Ctrl/Cmd+A puis Ctrl/Cmd+C), et vous collez ici.</p>
@@ -227,6 +227,25 @@
       <button id="loc-pvgis-import" class="btn btn--sm">Importer les données collées</button>
       <p id="loc-pvgis-status" class="field__hint" style="margin-top:8px;"></p>
       <div id="loc-pvgis-summary" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Données journalière PVGIS (irradiance réelle)</h2>
+        <button id="loc-open-pvgis-hourly" class="btn btn--sm">Ouvrir PVGIS (données horaires)</button>
+      </div>
+      <p class="field__hint">Pour ce volume de données, PVGIS ne permet pas le copier-coller : sur la page "Hourly data" qui s'ouvre, choisissez votre période puis téléchargez le CSV, et importez-le ci-dessous.</p>
+      <button id="loc-pvgis-hourly-import" class="btn btn--sm">Importer les données horaires</button>
+      <input type="file" id="loc-pvgis-hourly-input" accept=".csv" style="display:none">
+      <p id="loc-pvgis-hourly-status" class="field__hint" style="margin-top:8px;"></p>
+      <div id="loc-pvgis-hourly-year-picker" class="field-row" style="align-items:flex-end; display:none; margin-top:8px;">
+        <div class="field" style="flex:1; margin-bottom:0;">
+          <label for="loc-pvgis-hourly-year-select">Le fichier contient plusieurs années : laquelle utiliser ?</label>
+          <select id="loc-pvgis-hourly-year-select"></select>
+        </div>
+        <button id="loc-pvgis-hourly-year-confirm" class="btn btn--sm">Utiliser cette année</button>
+      </div>
+      <div id="loc-pvgis-hourly-summary" style="margin-top:10px;"></div>
     </div>
 
     <div class="card">
@@ -819,8 +838,10 @@
       </div>
     </div>
 
-    <div class="card">
-      <div class="card__header"><h2 class="card__title">Coût matériel</h2></div>
+    <div class="card card--price">
+      <div class="card__header">
+        <h2 class="card__title">Prix de l'installation</h2>
+      </div>
       <div class="stat-row">
         <div class="stat">
           <span class="stat__label">Panneaux</span>
@@ -833,6 +854,10 @@
         <div class="stat">
           <span class="stat__label">Batterie</span>
           <span class="stat__value stat__value--battery"><span id="stat-cost-battery">—</span><span class="stat__unit">€</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Autre</span>
+          <span class="stat__value stat__value--equinox"><span id="stat-cost-other">—</span><span class="stat__unit">€</span></span>
         </div>
         <div class="stat">
           <span class="stat__label">Total</span>

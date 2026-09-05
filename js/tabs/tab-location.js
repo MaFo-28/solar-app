@@ -6,7 +6,7 @@
  *  - géocodage adresse -> lat/lng (Nominatim/OSM, gratuit, sans clé) OU saisie manuelle
  *  - calcul des angles solaires aux solstices (élévation max, risque d'ombre)
  *  - tracé de la courbe d'élévation solaire sur 24h aux solstices
- *  - récupération PVGIS (irradiance mensuelle), mise en cache dans l'état
+ *  - récupération PVGIS (irradiance mensuelle et horaire), mise en cache dans l'état
  *  - édition des tarifs électriques (plages HC/HP, extensible)
  *  - boutons Charger / Enregistrer (état complet du projet)
  */
@@ -52,6 +52,7 @@ window.TabLocation = (function () {
     bindGeocodeForm();
     bindManualLatLng();
     bindPvgisButton();
+    bindPvgisHourlyButtons();
     bindTariffAddRow();
     bindHorizonThreshold();
     bindSellTariff();
@@ -836,6 +837,217 @@ window.TabLocation = (function () {
       s.location.pvgisCache = null;
       window.AppState.set("location", s.location);
       renderPvgisCacheStatus();
+    });
+  }
+
+  // ------------------------------------------------------------------
+  // PVGIS (irradiance horaire réelle, "Hourly data" / seriescalc)
+  //
+  // Même contournement CORS que ci-dessus pour ouvrir la requête, mais
+  // usage différent : ce volume de données (une valeur par heure sur
+  // potentiellement plusieurs années) n'est pas copiable/collable de
+  // façon fiable dans un textarea. PVGIS le propose donc en fichier
+  // téléchargeable (CSV) : on ouvre l'URL "seriescalc" dans un nouvel
+  // onglet, et l'utilisateur importe ensuite le fichier obtenu via un
+  // sélecteur classique.
+  // ------------------------------------------------------------------
+  let pendingHourlyByYear = null; // { année: [{month, day, hours:[24 W]}] } en attente de choix d'année
+
+  function bindPvgisHourlyButtons() {
+    window.bindOnce(document.getElementById("loc-open-pvgis-hourly"), "click", function () {
+      const s = window.AppState.get();
+      if (s.location.lat === null) {
+        alert("Renseignez d'abord une localisation.");
+        return;
+      }
+      const url =
+        "https://re.jrc.ec.europa.eu/api/v5_2/seriescalc?lat=" +
+        s.location.lat +
+        "&lon=" +
+        s.location.lng +
+        "&pvcalculation=1&components=1&outputformat=csv";
+      window.open(url, "_blank");
+      document.getElementById("loc-pvgis-hourly-status").textContent =
+        "Un nouvel onglet s'est ouvert : le fichier CSV se télécharge (ou s'affiche en texte brut selon le navigateur — dans ce cas, enregistrez-le avec Ctrl/Cmd+S). Importez-le ensuite ci-dessous.";
+    });
+
+    window.bindOnce(document.getElementById("loc-pvgis-hourly-import"), "click", function () {
+      document.getElementById("loc-pvgis-hourly-input").click();
+    });
+
+    window.bindOnce(document.getElementById("loc-pvgis-hourly-input"), "change", function (e) {
+      const file = e.target.files[0];
+      e.target.value = ""; // permet de réimporter le même fichier deux fois de suite
+      if (!file) return;
+      const statusEl = document.getElementById("loc-pvgis-hourly-status");
+      const reader = new FileReader();
+      reader.onload = function (ev) {
+        try {
+          const parsed = parsePvgisHourlyCsv(ev.target.result);
+          const years = Object.keys(parsed.byYear).map(Number).sort(function (a, b) { return a - b; });
+          if (years.length === 0) {
+            statusEl.textContent = "Aucune ligne de données exploitable trouvée dans ce fichier.";
+          } else if (years.length === 1) {
+            applyPvgisHourlyYear(parsed.byYear[years[0]], years[0]);
+            statusEl.textContent = "";
+          } else {
+            pendingHourlyByYear = parsed.byYear;
+            showYearPicker(years);
+            statusEl.textContent = "Plusieurs années détectées : choisissez celle à utiliser ci-dessous.";
+          }
+        } catch (err) {
+          statusEl.textContent =
+            "Fichier invalide : en-tête \"time,P,...\" introuvable (vérifiez qu'il s'agit bien d'un export PVGIS \"Hourly data\" avec le calcul PV activé).";
+          console.warn(err);
+        }
+      };
+      reader.onerror = function () {
+        statusEl.textContent = "Impossible de lire ce fichier.";
+      };
+      reader.readAsText(file);
+    });
+
+    window.bindOnce(document.getElementById("loc-pvgis-hourly-year-confirm"), "click", function () {
+      const select = document.getElementById("loc-pvgis-hourly-year-select");
+      const year = parseInt(select.value, 10);
+      if (pendingHourlyByYear && pendingHourlyByYear[year]) {
+        applyPvgisHourlyYear(pendingHourlyByYear[year], year);
+        pendingHourlyByYear = null;
+        document.getElementById("loc-pvgis-hourly-year-picker").style.display = "none";
+        document.getElementById("loc-pvgis-hourly-status").textContent = "";
+      }
+    });
+
+    renderPvgisHourlyCacheStatus(); // affiche l'état déjà en cache au chargement de l'onglet
+  }
+
+  function showYearPicker(years) {
+    const picker = document.getElementById("loc-pvgis-hourly-year-picker");
+    const select = document.getElementById("loc-pvgis-hourly-year-select");
+    select.innerHTML = years.map(function (y) { return "<option value=\"" + y + "\">" + y + "</option>"; }).join("");
+    picker.style.display = "flex";
+  }
+
+  /**
+   * Parse le CSV "Hourly data" de PVGIS (colonnes time, P, Gb(i), Gd(i),
+   * Gr(i), H_sun, T2m, WS10m, Int, précédées et suivies de lignes de
+   * métadonnées en texte libre). La ligne d'en-tête est repérée par son
+   * contenu (elle commence par "time,") plutôt que par un numéro de
+   * ligne fixe : le nombre de lignes de métadonnées varie selon les
+   * options choisies sur PVGIS, alors que le nom des colonnes est
+   * stable. On s'arrête à la première ligne de données mal formée (fin
+   * du tableau, début du texte de licence en pied de fichier).
+   *
+   * Seules les colonnes `time` et `P` (puissance PV, W) sont retenues,
+   * comme demandé — Gb(i)/Gd(i)/Gr(i)/H_sun/T2m/WS10m/Int sont ignorées.
+   *
+   * time est au format PVGIS "AAAAMMJJ:HHMM" (ex: "20200101:0010") ;
+   * seuls l'année/le mois/le jour/l'heure sont utilisés, les minutes
+   * (toujours ":10" chez PVGIS, convention interne à leur horodatage)
+   * sont ignorées.
+   *
+   * Retourne { byYear: { [année]: [{ month, day, hours: [24 valeurs W, index 0 = 0h] }] } }.
+   */
+  function parsePvgisHourlyCsv(text) {
+    const lines = text.split(/\r?\n/);
+    let headerIdx = -1;
+    let timeCol = -1;
+    let powerCol = -1;
+    for (let i = 0; i < lines.length; i++) {
+      const cells = lines[i].split(",");
+      if (cells[0].trim().toLowerCase() === "time") {
+        timeCol = cells.findIndex(function (c) { return c.trim().toLowerCase() === "time"; });
+        powerCol = cells.findIndex(function (c) { return c.trim() === "P"; });
+        headerIdx = i;
+        break;
+      }
+    }
+    if (headerIdx === -1 || timeCol === -1 || powerCol === -1) {
+      throw new Error("en-tête \"time,P,...\" introuvable");
+    }
+
+    // clé "année-mois-jour" -> { year, month, day, hours: [24 puissances W] }
+    const byDate = {};
+    const timeRe = /^(\d{4})(\d{2})(\d{2}):(\d{2})/;
+
+    for (let i = headerIdx + 1; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line || !line.trim()) continue;
+      const cells = line.split(",");
+      const m = timeRe.exec((cells[timeCol] || "").trim());
+      if (!m) break; // fin du tableau (pied de page PVGIS)
+      const year = parseInt(m[1], 10);
+      const month = parseInt(m[2], 10);
+      const day = parseInt(m[3], 10);
+      const hour = parseInt(m[4], 10);
+      const powerW = parseFloat(cells[powerCol]);
+      if (hour < 0 || hour > 23 || isNaN(powerW)) continue;
+      const key = year + "-" + month + "-" + day;
+      if (!byDate[key]) byDate[key] = { year: year, month: month, day: day, hours: new Array(24) };
+      byDate[key].hours[hour] = powerW;
+    }
+
+    const byYear = {};
+    Object.keys(byDate).forEach(function (key) {
+      const entry = byDate[key];
+      if (!byYear[entry.year]) byYear[entry.year] = [];
+      byYear[entry.year].push({ month: entry.month, day: entry.day, hours: entry.hours });
+    });
+    return { byYear: byYear };
+  }
+
+  /**
+   * Interpole les 24 valeurs horaires d'une journée en 96 valeurs à pas
+   * de 15 min (index 0 = 00h00, index 95 = 23h45), par interpolation
+   * linéaire entre heures consécutives. Le dernier quart d'heure de la
+   * journée (23h15-23h45) n'a pas de point suivant dans la même
+   * journée : on prolonge à plat la valeur de 23h plutôt que d'aller
+   * chercher le lendemain (les deux jours ne sont pas forcément
+   * contigus dans le fichier importé).
+   */
+  function interpolateTo15Min(hours) {
+    const values = new Array(96);
+    for (let h = 0; h < 24; h++) {
+      const v0 = typeof hours[h] === "number" ? hours[h] : 0;
+      const v1 = h + 1 < 24 && typeof hours[h + 1] === "number" ? hours[h + 1] : v0;
+      for (let q = 0; q < 4; q++) {
+        values[h * 4 + q] = v0 + (v1 - v0) * (q / 4);
+      }
+    }
+    return values;
+  }
+
+  function applyPvgisHourlyYear(days, year) {
+    const processedDays = days
+      .slice()
+      .sort(function (a, b) { return a.month - b.month || a.day - b.day; })
+      .map(function (d) { return { month: d.month, day: d.day, values15min: interpolateTo15Min(d.hours) }; });
+    const s = window.AppState.get();
+    s.location.pvgisHourlyCache = { year: year, days: processedDays };
+    window.AppState.set("location", s.location);
+    renderPvgisHourlyCacheStatus();
+  }
+
+  /** Même rôle que renderPvgisCacheStatus, pour le cache horaire. */
+  function renderPvgisHourlyCacheStatus() {
+    const el = document.getElementById("loc-pvgis-hourly-summary");
+    const cache = window.AppState.get().location.pvgisHourlyCache;
+
+    if (!cache) {
+      el.innerHTML = "<p class=\"field__hint\">Aucune donnée horaire PVGIS en cache pour l'instant.</p>";
+      return;
+    }
+
+    el.innerHTML =
+      "<p class=\"field__hint\" style=\"color:var(--accent-battery);\">✓ Données horaires PVGIS en cache pour l'année " +
+      cache.year + " (" + cache.days.length + " jour(s), pas 15 min).</p>" +
+      "<button id=\"loc-pvgis-hourly-clear\" class=\"btn btn--sm btn--ghost\" style=\"margin-top:6px;\">Effacer le cache horaire PVGIS</button>";
+
+    document.getElementById("loc-pvgis-hourly-clear").addEventListener("click", function () {
+      const s = window.AppState.get();
+      s.location.pvgisHourlyCache = null;
+      window.AppState.set("location", s.location);
+      renderPvgisHourlyCacheStatus();
     });
   }
 
