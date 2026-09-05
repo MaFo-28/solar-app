@@ -1,12 +1,16 @@
 /**
  * tab-installation.js
- * Onglet Installation. Gère les profils d'installation comme une base
- * de données (même principe que Matériel) : un profil sélectionné à
- * la fois, actions Nouveau/Dupliquer/Renommer/Supprimer, regroupant
- * le choix du matériel, les stratégies de charge/décharge/vente, et
- * des coûts fixes additionnels. Permet de comparer plusieurs
- * configurations (ex: "4 panneaux + micro-onduleur" vs "8 panneaux +
- * telle batterie") sans se marcher dessus.
+ * Onglet 4 — Installation. Gère les profils d'installation comme une
+ * base de données (même principe que Matériel et Consommation) : un
+ * profil sélectionné à la fois, actions Nouveau/Dupliquer/Renommer/
+ * Supprimer, regroupant le choix du matériel, les stratégies de
+ * charge/décharge/vente, et des coûts fixes additionnels. Permet de
+ * comparer plusieurs configurations (ex: "4 panneaux + micro-onduleur"
+ * vs "8 panneaux + telle batterie") sans se marcher dessus.
+ *
+ * Le prix de l'installation est recalculé à chaque modification, à
+ * partir des prix unitaires des bases de l'onglet Matériel et des
+ * lignes de coût fixe.
  */
 window.TabInstallation = (function () {
   "use strict";
@@ -45,12 +49,22 @@ window.TabInstallation = (function () {
     }
   }
 
+  /**
+   * Ré-affiche tout l'onglet pour le profil actif. bindFields et
+   * bindStrategyFields sont rappelés volontairement : ils réécrivent la
+   * valeur de chaque champ depuis le profil (leur attachement
+   * d'écouteur, lui, est protégé par bindOnce). Sans ça, changer de
+   * profil laisserait les champs numériques et les listes de stratégie
+   * sur les valeurs du profil précédent.
+   */
   function refreshAll() {
     renderProfileSelect();
     renderPanelSelect();
     renderMaskSelect();
     renderInverterSelect();
     renderBatterySelect();
+    bindFields();
+    bindStrategyFields();
     renderFixedCostTable();
     recomputePrice();
   }
@@ -72,6 +86,10 @@ window.TabInstallation = (function () {
     select.value = s.activeInstallationProfileId || (profiles[0] && profiles[0].id) || "";
   }
 
+  function newProfileId() {
+    return "install-profile-" + Date.now().toString(36);
+  }
+
   function bindProfileButtons() {
     window.bindOnce(document.getElementById("install-profile-select"), "change", function (e) {
       window.AppState.set("activeInstallationProfileId", e.target.value);
@@ -82,9 +100,8 @@ window.TabInstallation = (function () {
       const name = window.prompt('Nom du nouveau profil (ex. "8 panneaux + batterie") :', "Nouveau profil");
       if (!name) return;
       const st = window.AppState.get();
-      const id = "profile-" + Date.now().toString(36);
-      const blank = window.AppState.createInstallationProfile(id, name);
-      st.installationProfiles.push(blank);
+      const id = newProfileId();
+      st.installationProfiles.push(window.AppState.createInstallationProfile(id, name));
       window.AppState.set("installationProfiles", st.installationProfiles);
       window.AppState.set("activeInstallationProfileId", id);
       refreshAll();
@@ -96,7 +113,7 @@ window.TabInstallation = (function () {
       const name = window.prompt("Nom du duplicata :", current.name + " (copie)");
       if (!name) return;
       const st = window.AppState.get();
-      const id = "profile-" + Date.now().toString(36);
+      const id = newProfileId();
       const copy = JSON.parse(JSON.stringify(current));
       copy.id = id;
       copy.name = name;
@@ -128,9 +145,8 @@ window.TabInstallation = (function () {
       if (!current) return;
       if (!confirm('Supprimer le profil "' + current.name + '" ? Cette action est irréversible.')) return;
       st.installationProfiles = st.installationProfiles.filter((p) => p.id !== current.id);
-      st.activeInstallationProfileId = st.installationProfiles[0].id;
       window.AppState.set("installationProfiles", st.installationProfiles);
-      window.AppState.set("activeInstallationProfileId", st.activeInstallationProfileId);
+      window.AppState.set("activeInstallationProfileId", st.installationProfiles[0].id);
       refreshAll();
     });
   }
@@ -138,6 +154,13 @@ window.TabInstallation = (function () {
   // ------------------------------------------------------------------
   // Choix du matériel
   // ------------------------------------------------------------------
+  /** Tri alphabétique marque puis modèle, insensible à la casse. */
+  function sortedByName(list) {
+    return list.slice().sort((a, b) =>
+      (a.brand + " " + a.model).localeCompare(b.brand + " " + b.model, "fr", { sensitivity: "base" })
+    );
+  }
+
   function renderPanelSelect() {
     const select = document.getElementById("install-panel-select");
     const db = sortedByName(window.AppState.get().panelsDatabase || []);
@@ -175,7 +198,7 @@ window.TabInstallation = (function () {
     if (!profile) return;
     select.value = profile.panels.horizonMaskProfileId || "";
     window.bindOnce(select, "change", function () {
-      setProfileField("panels", "horizonMaskProfileId", select.value || null, true);
+      setProfileField("panels", "horizonMaskProfileId", select.value || null, false);
     });
   }
 
@@ -213,12 +236,6 @@ window.TabInstallation = (function () {
     window.bindOnce(select, "change", function () {
       setProfileField("battery", "selectedModelId", select.value || null, true);
     });
-  }
-
-  function sortedByName(list) {
-    return list.slice().sort((a, b) =>
-      (a.brand + " " + a.model).localeCompare(b.brand + " " + b.model, "fr", { sensitivity: "base" })
-    );
   }
 
   // ------------------------------------------------------------------
@@ -289,6 +306,10 @@ window.TabInstallation = (function () {
   // ------------------------------------------------------------------
   // Coût fixe (lignes libellé + prix, éventuellement négatif)
   // ------------------------------------------------------------------
+  function escapeAttr(str) {
+    return String(str).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+  }
+
   function renderFixedCostTable() {
     const tbody = document.getElementById("install-fixedcost-table-body");
     tbody.innerHTML = "";
@@ -299,7 +320,7 @@ window.TabInstallation = (function () {
       const tr = document.createElement("tr");
       tr.innerHTML =
         '<td><input type="text" data-idx="' + index + '" data-field="label" value="' +
-        String(line.label).replace(/"/g, "&quot;") + '"></td>' +
+        escapeAttr(line.label) + '"></td>' +
         '<td><input type="number" step="1" data-idx="' + index + '" data-field="priceEur" value="' + line.priceEur + '"></td>' +
         '<td><button class="btn btn--sm btn--ghost" data-remove="' + index + '">✕</button></td>';
       tbody.appendChild(tr);
@@ -334,6 +355,7 @@ window.TabInstallation = (function () {
     window.bindOnce(document.getElementById("install-fixedcost-add"), "click", function () {
       const st = window.AppState.get();
       const p = st.installationProfiles.find((x) => x.id === st.activeInstallationProfileId);
+      if (!p) return;
       if (!p.fixedCosts) p.fixedCosts = [];
       p.fixedCosts.push({ id: "cost-" + Date.now().toString(36), label: "Pose et câblage", priceEur: 0 });
       window.AppState.set("installationProfiles", st.installationProfiles);
@@ -356,6 +378,7 @@ window.TabInstallation = (function () {
     const inverter = (s.invertersDatabase || []).find((i) => i.id === profile.inverter.selectedModelId);
     const inverterPrice = inverter ? inverter.priceEur : 0;
 
+    // Une seule batterie par installation, donc pas de multiplicateur.
     const battery = (s.batteriesDatabase || []).find((b) => b.id === profile.battery.selectedModelId);
     const batteryPrice = battery ? battery.priceEur : 0;
 

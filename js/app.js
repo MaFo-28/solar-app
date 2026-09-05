@@ -11,6 +11,7 @@ window.App = (function () {
     location: window.TabLocation,
     material: window.TabMaterial,
     consumption: window.TabConsumption,
+    installation: window.TabInstallation,
     simulation: window.TabSimulation,
     financial: window.TabFinancial,
   };

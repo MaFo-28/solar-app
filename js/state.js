@@ -19,6 +19,54 @@ window.AppState = (function () {
 
   const STORAGE_KEY = "solar-app-state-v1";
 
+  /**
+   * Fabrique un profil d'installation vierge. Un profil regroupe tout
+   * ce qui définit une installation concrète : le matériel choisi
+   * (parmi les bases de l'onglet Matériel), les stratégies de charge /
+   * décharge / vente, et les coûts fixes additionnels. Gérés comme une
+   * base de données (onglet Installation), ils permettent de comparer
+   * plusieurs configurations sans qu'elles se marchent dessus.
+   *
+   * Une seule batterie par profil : pour plus de capacité, on crée une
+   * batterie de plus grande capacité dans l'onglet Matériel.
+   */
+  function createInstallationProfile(id, name) {
+    return {
+      id,
+      name,
+      panels: {
+        selectedModelId: null,
+        count: 1,
+        orientation: 0,          // azimut du panneau, 0=Sud dans notre convention d'affichage
+        tilt: 30,                // inclinaison en degrés / horizontale
+        horizonMaskProfileId: null, // id d'un profil de location.horizonMaskProfiles, ou null = pas de masquage
+        degradationPerYear: 0.5, // % / an
+      },
+      inverter: {
+        selectedModelId: null, // null = "Aucun"
+      },
+      battery: {
+        selectedModelId: null, // null = "Aucune"
+      },
+      chargeStrategy: {
+        mode: "surplus", // "surplus" (uniquement l'excédent) | "priority" (batterie chargée avant la maison)
+        gridChargeMode: "off", // "off" | "hc" (recharge depuis le réseau en heures creuses)
+        maxSocPct: 100, // limite haute de charge, %
+      },
+      dischargeStrategy: {
+        mode: "asap", // "asap" | "hp" (heures pleines uniquement) | "schedule" (plage horaire dédiée)
+        scheduleStartHour: 18,
+        scheduleEndHour: 22,
+        minSocPct: 20, // limite basse de décharge, %
+      },
+      sellMode: "sell", // "sell" (revente au tarif défini) | "zero" (0 injection, surplus perdu) | "free" (injection gratuite)
+      // Lignes libellé + prix libres (pose, câblage, démarches...).
+      // Un prix négatif est permis, pour modéliser une remise liée à
+      // l'achat groupé d'éléments (ex. "Pack" à -150 €).
+      fixedCosts: [],
+    };
+  }
+
   function defaultState() {
     return {
       version: 1,
@@ -78,42 +126,21 @@ window.AppState = (function () {
         profiles: [{ id: "consumption-profile-1", name: "Défaut", segments: [] }],
         activeProfileId: "consumption-profile-1",
       },
-      strategy: {
-        // Config matériel de l'installation — utilisée à la fois pour
-        // les courbes de production et pour la simulation, ET par
-        // l'onglet Bilan financier (c'est la config "installée").
-        panels: {
-          selectedModelId: null,
-          count: 1,
-          orientation: 0,
-          tilt: 30,
-          horizonMaskProfileId: null,
-          degradationPerYear: 0.5, // % / an
-        },
-        inverter: {
-          selectedModelId: null, // null = "Aucun"
-          count: 1,
-        },
-        battery: {
-          selectedModelId: null, // null = "Aucun"
-          count: 1,
-        },
-        // jusqu'à 2 profils de consommation (location.consumption.profiles) affichés
-        consumptionProfileIds: [],
-
-        chargeStrategy: {
-          mode: "surplus", // "surplus" (uniquement l'excédent) | "priority" (batterie chargée avant la maison)
-          gridChargeMode: "off", // "off" | "hc" (recharge depuis le réseau en heures creuses)
-          maxSocPct: 100, // limite haute de charge, %
-        },
-        dischargeStrategy: {
-          mode: "asap", // "asap" | "hp" (heures pleines uniquement) | "schedule" (plage horaire dédiée)
-          scheduleStartHour: 18,
-          scheduleEndHour: 22,
-          minSocPct: 20, // limite basse de décharge, %
-          initialSocPct: 50, // niveau de charge au début de la journée simulée, %
-        },
-        sellMode: "sell", // "sell" (revente au tarif défini) | "zero" (0 injection, surplus perdu) | "free" (injection gratuite)
+      // Base de données des installations (onglet Installation) : le
+      // matériel installé et ses stratégies, hors de l'onglet
+      // Simulation qui ne fait plus que choisir un profil et le
+      // visualiser.
+      installationProfiles: [createInstallationProfile("install-profile-1", "Installation 1")],
+      activeInstallationProfileId: "install-profile-1",
+      // Onglet Simulation : uniquement les choix propres à la
+      // simulation (quel profil d'installation, quel profil de
+      // consommation, niveau de charge de la batterie en début de
+      // journée) — la config matériel/stratégies vit dans
+      // installationProfiles.
+      simulationConfig: {
+        installationProfileId: "install-profile-1",
+        consumptionProfileId: "consumption-profile-1",
+        initialSocPct: 50, // niveau de charge au début de la journée simulée, %
       },
     };
   }
@@ -230,6 +257,79 @@ window.AppState = (function () {
     return { profiles: defConsumption.profiles, activeProfileId: defConsumption.activeProfileId };
   }
 
+  /**
+   * Complète un profil d'installation chargé avec les champs par
+   * défaut : même rôle que mergeWithDefaults, mais à l'échelle d'un
+   * profil (un profil enregistré avant l'ajout d'un champ ne le
+   * contient pas).
+   */
+  function normalizeInstallationProfile(loadedProfile) {
+    const base = createInstallationProfile(
+      loadedProfile.id || genId("install-profile"),
+      loadedProfile.name || "Installation"
+    );
+    ["panels", "inverter", "battery", "chargeStrategy", "dischargeStrategy"].forEach((key) => {
+      base[key] = Object.assign(base[key], loadedProfile[key] || {});
+    });
+    if (loadedProfile.sellMode) base.sellMode = loadedProfile.sellMode;
+    if (Array.isArray(loadedProfile.fixedCosts)) base.fixedCosts = loadedProfile.fixedCosts;
+    return base;
+  }
+
+  /**
+   * Migration douce : un projet enregistré avant l'onglet Installation
+   * décrivait une installation unique dans `strategy` (matériel +
+   * stratégies de charge/décharge/vente). On la convertit en premier
+   * profil d'installation pour ne pas perdre la config de
+   * l'utilisateur.
+   */
+  function migrateInstallationProfiles(loaded, def) {
+    if (Array.isArray(loaded.installationProfiles) && loaded.installationProfiles.length > 0) {
+      const profiles = loaded.installationProfiles.map(normalizeInstallationProfile);
+      const activeId =
+        loaded.activeInstallationProfileId &&
+        profiles.some((p) => p.id === loaded.activeInstallationProfileId)
+          ? loaded.activeInstallationProfileId
+          : profiles[0].id;
+      return { installationProfiles: profiles, activeInstallationProfileId: activeId };
+    }
+    if (loaded.strategy) {
+      const profile = normalizeInstallationProfile(
+        Object.assign({ id: genId("install-profile"), name: "Installation 1" }, loaded.strategy)
+      );
+      return { installationProfiles: [profile], activeInstallationProfileId: profile.id };
+    }
+    return {
+      installationProfiles: def.installationProfiles,
+      activeInstallationProfileId: def.activeInstallationProfileId,
+    };
+  }
+
+  /**
+   * Choix propres à l'onglet Simulation. Reprend, pour un projet
+   * d'avant l'onglet Installation, le niveau de charge initial et le
+   * profil de consommation qui vivaient dans `strategy`.
+   */
+  function migrateSimulationConfig(loaded, def, profiles, consumptionProfiles) {
+    const cfg = Object.assign({}, def.simulationConfig, loaded.simulationConfig || {});
+    const legacy = loaded.strategy;
+    if (!loaded.simulationConfig && legacy) {
+      if (legacy.dischargeStrategy && typeof legacy.dischargeStrategy.initialSocPct === "number") {
+        cfg.initialSocPct = legacy.dischargeStrategy.initialSocPct;
+      }
+      if (Array.isArray(legacy.consumptionProfileIds) && legacy.consumptionProfileIds[0]) {
+        cfg.consumptionProfileId = legacy.consumptionProfileIds[0];
+      }
+    }
+    if (!profiles.some((p) => p.id === cfg.installationProfileId)) {
+      cfg.installationProfileId = profiles[0].id;
+    }
+    if (!consumptionProfiles.some((p) => p.id === cfg.consumptionProfileId)) {
+      cfg.consumptionProfileId = consumptionProfiles.length > 0 ? consumptionProfiles[0].id : null;
+    }
+    return cfg;
+  }
+
   function mergeWithDefaults(loaded) {
     const def = defaultState();
     if (!loaded || typeof loaded !== "object") return def;
@@ -244,7 +344,7 @@ window.AppState = (function () {
     merged.batteriesDatabase = Array.isArray(loaded.batteriesDatabase) && loaded.batteriesDatabase.length > 0
       ? loaded.batteriesDatabase
       : def.batteriesDatabase;
-    ["location", "panels", "inverter", "battery", "consumption", "strategy"].forEach((key) => {
+    ["location", "panels", "inverter", "battery", "consumption"].forEach((key) => {
       merged[key] = Object.assign({}, def[key], loaded[key] || {});
     });
     // tableaux : on garde ceux de l'utilisateur s'ils existent, sinon le défaut
@@ -261,15 +361,13 @@ window.AppState = (function () {
     merged.consumption.activeProfileId = consumptionData.activeProfileId;
     delete merged.consumption.hourlyProfileW; // ancien champ, remplacé par profiles[].segments
 
-    // strategy : fusion un niveau plus profond pour ses sous-objets
-    // (panels/inverter/battery/chargeStrategy/dischargeStrategy), pour
-    // absorber les champs ajoutés après une première sauvegarde
-    ["panels", "inverter", "battery", "chargeStrategy", "dischargeStrategy"].forEach((key) => {
-      merged.strategy[key] = Object.assign({}, def.strategy[key], (loaded.strategy && loaded.strategy[key]) || {});
-    });
-    merged.strategy.consumptionProfileIds = Array.isArray(loaded.strategy && loaded.strategy.consumptionProfileIds)
-      ? loaded.strategy.consumptionProfileIds
-      : def.strategy.consumptionProfileIds;
+    const installationData = migrateInstallationProfiles(loaded, def);
+    merged.installationProfiles = installationData.installationProfiles;
+    merged.activeInstallationProfileId = installationData.activeInstallationProfileId;
+    merged.simulationConfig = migrateSimulationConfig(
+      loaded, def, merged.installationProfiles, merged.consumption.profiles
+    );
+    delete merged.strategy; // ancien champ, remplacé par installationProfiles + simulationConfig
 
     return merged;
   }
@@ -572,6 +670,7 @@ window.AppState = (function () {
     set,
     onChange,
     reset,
+    createInstallationProfile,
     getCurrentFileName,
     saveProject,
     loadProjectViaPicker,

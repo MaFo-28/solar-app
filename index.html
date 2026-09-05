@@ -38,8 +38,9 @@
   <button class="tab-nav__item" data-tab="location"><span class="tab-nav__index">01</span> Localisation</button>
   <button class="tab-nav__item" data-tab="material"><span class="tab-nav__index">02</span> Matériel</button>
   <button class="tab-nav__item" data-tab="consumption"><span class="tab-nav__index">03</span> Consommation</button>
-  <button class="tab-nav__item" data-tab="simulation"><span class="tab-nav__index">04</span> Simulation</button>
-  <button class="tab-nav__item" data-tab="financial"><span class="tab-nav__index">05</span> Bilan financier</button>
+  <button class="tab-nav__item" data-tab="installation"><span class="tab-nav__index">04</span> Installation</button>
+  <button class="tab-nav__item" data-tab="simulation"><span class="tab-nav__index">05</span> Simulation</button>
+  <button class="tab-nav__item" data-tab="financial"><span class="tab-nav__index">06</span> Bilan financier</button>
 </nav>
 </div>
 
@@ -531,60 +532,192 @@
   </section>
 
   <!-- ============================================================
-       ONGLET 6 — STRATÉGIE
+       ONGLET 4 — INSTALLATION (base de données des installations)
        ============================================================ -->
-  <section id="tab-simulation" class="tab-panel">
+  <section id="tab-installation" class="tab-panel">
 
     <div class="card">
       <div class="card__header">
-        <h2 class="card__title">Installation</h2>
+        <h2 class="card__title">Profil d'installation</h2>
       </div>
-      <p class="field__hint">Panneaux, onduleur et batterie choisis parmi les modèles de l'onglet Matériel — c'est la config utilisée ici et dans le Bilan financier.</p>
+      <div class="field-row" style="align-items:flex-end; margin-bottom:10px;">
+        <div class="field" style="flex:1; margin-bottom:0;">
+          <label for="install-profile-select">Profil affiché</label>
+          <select id="install-profile-select"></select>
+        </div>
+        <button id="install-profile-new" class="btn btn--sm">+ Nouveau profil</button>
+        <button id="install-profile-duplicate" class="btn btn--sm btn--ghost">Dupliquer</button>
+        <button id="install-profile-rename" class="btn btn--sm btn--ghost">Renommer</button>
+        <button id="install-profile-delete" class="btn btn--sm btn--ghost">Supprimer</button>
+      </div>
+      <p class="field__hint">Créez un profil par configuration à comparer (ex. "8 panneaux + batterie", "4 panneaux sans batterie"). Un seul profil est affiché/édité à la fois.</p>
+    </div>
+
+    <div class="card card--price">
+      <div class="card__header">
+        <h2 class="card__title">Prix de l'installation</h2>
+      </div>
+      <div class="stat-row">
+        <div class="stat">
+          <span class="stat__label">Panneaux</span>
+          <span class="stat__value"><span id="stat-install-price-panels">—</span><span class="stat__unit">€</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Onduleur</span>
+          <span class="stat__value"><span id="stat-install-price-inverter">—</span><span class="stat__unit">€</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Batterie</span>
+          <span class="stat__value stat__value--battery"><span id="stat-install-price-battery">—</span><span class="stat__unit">€</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Autre</span>
+          <span class="stat__value stat__value--equinox"><span id="stat-install-price-other">—</span><span class="stat__unit">€</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Total</span>
+          <span class="stat__value"><span id="stat-install-price-total">—</span><span class="stat__unit">€</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Choix du matériel</h2>
+      </div>
+      <p class="field__hint">Panneaux, onduleur et batterie choisis parmi les modèles de l'onglet Matériel.</p>
 
       <h3 style="font-size:12px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; margin:16px 0 8px;">Panneaux</h3>
       <div class="grid-3">
         <div class="field">
-          <label for="strategy-panel-select">Modèle</label>
-          <select id="strategy-panel-select"></select>
+          <label for="install-panel-select">Modèle</label>
+          <select id="install-panel-select"></select>
         </div>
         <div class="field">
-          <label for="strategy-panel-count">Nombre</label>
-          <input type="number" id="strategy-panel-count" min="1" step="1">
+          <label for="install-panel-count">Nombre</label>
+          <input type="number" id="install-panel-count" min="1" step="1">
         </div>
         <div class="field">
-          <label for="strategy-panel-orientation">Orientation (° / Sud)</label>
-          <input type="number" id="strategy-panel-orientation" step="1">
+          <label for="install-panel-degradation">Dégradation annuelle (%/an)</label>
+          <input type="number" id="install-panel-degradation" min="0" step="0.1">
+        </div>
+      </div>
+      <div class="grid-3">
+        <div class="field">
+          <label for="install-panel-orientation">Orientation (° / Sud)</label>
+          <input type="number" id="install-panel-orientation" step="1">
         </div>
         <div class="field">
-          <label for="strategy-panel-tilt">Inclinaison (°)</label>
-          <input type="number" id="strategy-panel-tilt" min="0" max="90" step="1">
+          <label for="install-panel-tilt">Inclinaison (°)</label>
+          <input type="number" id="install-panel-tilt" min="0" max="90" step="1">
         </div>
         <div class="field">
-          <label for="strategy-panel-mask">Profil d'ombre</label>
-          <select id="strategy-panel-mask"></select>
-        </div>
-        <div class="field">
-          <label for="strategy-panel-degradation">Dégradation annuelle (%/an)</label>
-          <input type="number" id="strategy-panel-degradation" min="0" step="0.1">
+          <label for="install-panel-mask">Profil d'ombre</label>
+          <select id="install-panel-mask"></select>
         </div>
       </div>
 
       <h3 style="font-size:12px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; margin:16px 0 8px;">Onduleur</h3>
       <div class="field" style="max-width:340px;">
-        <label for="strategy-inverter-select">Modèle</label>
-        <select id="strategy-inverter-select"></select>
+        <label for="install-inverter-select">Modèle</label>
+        <select id="install-inverter-select"></select>
       </div>
 
       <h3 style="font-size:12px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; margin:16px 0 8px;">Batterie</h3>
+      <div class="field" style="max-width:340px;">
+        <label for="install-battery-select">Modèle</label>
+        <select id="install-battery-select"></select>
+        <span class="field__hint">Une seule batterie par installation : pour plus de capacité, créez une batterie de plus grande capacité dans l'onglet Matériel.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__header"><h2 class="card__title">Stratégie de charge de la batterie</h2></div>
       <div class="grid-2">
         <div class="field">
-          <label for="strategy-battery-select">Modèle</label>
-          <select id="strategy-battery-select"></select>
+          <label for="install-charge-mode">Priorité</label>
+          <select id="install-charge-mode">
+            <option value="surplus">Uniquement le surplus (maison d'abord)</option>
+            <option value="priority">Batterie prioritaire (avant la maison)</option>
+          </select>
         </div>
         <div class="field">
-          <label for="strategy-battery-count">Nombre</label>
-          <input type="number" id="strategy-battery-count" min="1" step="1">
+          <label for="install-charge-grid">Recharge réseau</label>
+          <select id="install-charge-grid">
+            <option value="off">Solaire uniquement</option>
+            <option value="hc">Autoriser en heures creuses</option>
+          </select>
         </div>
+        <div class="field">
+          <label for="install-charge-max-soc">Limite de charge (%)</label>
+          <input type="number" id="install-charge-max-soc" min="1" max="100" step="1">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__header"><h2 class="card__title">Stratégie de décharge de la batterie</h2></div>
+      <div class="grid-3">
+        <div class="field">
+          <label for="install-discharge-mode">Déclenchement</label>
+          <select id="install-discharge-mode">
+            <option value="asap">Dès que possible</option>
+            <option value="hp">Uniquement en heures pleines</option>
+            <option value="schedule">Plage horaire dédiée</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="install-discharge-start">Début de plage (h)</label>
+          <input type="number" id="install-discharge-start" min="0" max="24" step="0.5">
+        </div>
+        <div class="field">
+          <label for="install-discharge-end">Fin de plage (h)</label>
+          <input type="number" id="install-discharge-end" min="0" max="24" step="0.5">
+        </div>
+        <div class="field">
+          <label for="install-discharge-min-soc">Limite de décharge (%)</label>
+          <input type="number" id="install-discharge-min-soc" min="0" max="99" step="1">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__header"><h2 class="card__title">Stratégie de vente du surplus</h2></div>
+      <div class="field" style="max-width:400px;">
+        <select id="install-sell-mode">
+          <option value="sell">Revente (au tarif défini dans l'onglet Localisation)</option>
+          <option value="zero">0 injection (surplus écrêté, perdu)</option>
+          <option value="free">Injection gratuite (envoyé au réseau, non rémunéré)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Coût fixe</h2>
+      </div>
+      <p class="field__hint">Tout ce qui ne vient pas du matériel : pose, câblage, démarches… Un prix négatif est accepté, pour modéliser une remise (ex. "Pack" à -150 €).</p>
+      <table class="data-table">
+        <thead><tr><th>Libellé</th><th>Prix (€) <button id="install-fixedcost-add" class="btn btn--sm" style="margin-left:8px; text-transform:none; font-size:12px; letter-spacing:normal;">+ Ajouter une ligne</button></th><th></th></tr></thead>
+        <tbody id="install-fixedcost-table-body"></tbody>
+      </table>
+    </div>
+
+  </section>
+
+  <!-- ============================================================
+       ONGLET 5 — SIMULATION
+       ============================================================ -->
+  <section id="tab-simulation" class="tab-panel">
+
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Profil d'installation</h2>
+      </div>
+      <div class="field" style="max-width:400px;">
+        <label for="simulation-install-select">Installation simulée</label>
+        <select id="simulation-install-select"></select>
+        <span class="field__hint">Matériel et stratégies définis dans l'onglet Installation.</span>
       </div>
     </div>
 
@@ -614,6 +747,78 @@
 
     <div class="card">
       <div class="card__header">
+        <h2 class="card__title">Profil de consommation</h2>
+      </div>
+      <div class="field" style="max-width:400px;">
+        <label for="simulation-consumption-select">Profil simulé</label>
+        <select id="simulation-consumption-select"></select>
+        <span class="field__hint">Profils définis dans l'onglet Consommation.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__header"><h2 class="card__title">Niveau de charge de la batterie</h2></div>
+      <div class="grid-2">
+        <div class="field">
+          <label for="simulation-initial-soc">Niveau de charge de début (%)</label>
+          <input type="number" id="simulation-initial-soc" min="0" max="100" step="1">
+          <span class="field__hint">Niveau de la batterie au début de la journée simulée.</span>
+        </div>
+        <div class="field">
+          <label>Niveau de charge de fin (%)</label>
+          <input type="text" id="simulation-final-soc-display" disabled style="color:var(--text-faint);">
+          <span class="field__hint">Résultat de la simulation, par saison.</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="simulation-errors" class="card" style="display:none; border-color:var(--accent-danger);">
+      <div class="card__header"><h2 class="card__title" style="color:var(--accent-danger);">Configuration invalide</h2></div>
+      <ul id="simulation-errors-list" style="margin:0; padding-left:20px; color:var(--accent-danger); font-size:13px;"></ul>
+    </div>
+
+    <div id="simulation-results"></div>
+
+  </section>
+
+  <!-- ============================================================
+       ONGLET 6 — BILAN FINANCIER
+       ============================================================ -->
+  <section id="tab-financial" class="tab-panel">
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Profil d'installation</h2>
+      </div>
+      <div class="field" style="max-width:400px;">
+        <label for="financial-install-select">Installation évaluée</label>
+        <select id="financial-install-select"></select>
+        <span class="field__hint">Matériel et stratégies définis dans l'onglet Installation.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__header"><h2 class="card__title">Coût matériel</h2></div>
+      <div class="stat-row">
+        <div class="stat">
+          <span class="stat__label">Panneaux</span>
+          <span class="stat__value"><span id="stat-cost-panels">—</span><span class="stat__unit">€</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Onduleur</span>
+          <span class="stat__value"><span id="stat-cost-inverter">—</span><span class="stat__unit">€</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Batterie</span>
+          <span class="stat__value stat__value--battery"><span id="stat-cost-battery">—</span><span class="stat__unit">€</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Total</span>
+          <span class="stat__value"><span id="stat-cost-total">—</span><span class="stat__unit">€</span></span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card__header">
         <h2 class="card__title">Production mensuelle réaliste (PVGIS)</h2>
       </div>
       <p id="panel-monthly-hint" class="field__hint">Récupérez d'abord les données PVGIS dans l'onglet Localisation pour voir cette estimation.</p>
@@ -636,131 +841,14 @@
       <div class="card__header">
         <h2 class="card__title">Dégradation dans le temps</h2>
       </div>
-      <p class="field__hint">Perte de rendement cumulée des panneaux sur 25 ans, au taux de dégradation annuel renseigné ci-dessus.</p>
+      <p class="field__hint">Perte de rendement cumulée des panneaux sur 25 ans, au taux de dégradation annuel du profil d'installation choisi.</p>
       <div class="chart-wrap" style="margin-top:12px;">
         <canvas id="chart-panel-degradation"></canvas>
       </div>
     </div>
 
-    <div class="card">
-      <div class="card__header">
-        <h2 class="card__title">Profils de consommation</h2>
-      </div>
-      <div class="field" style="max-width:400px;">
-        <label for="strategy-consumption-profile-1">Profil</label>
-        <select id="strategy-consumption-profile-1"></select>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card__header"><h2 class="card__title">Stratégie de charge de la batterie</h2></div>
-      <div class="grid-2">
-        <div class="field">
-          <label for="strategy-charge-mode">Priorité</label>
-          <select id="strategy-charge-mode">
-            <option value="surplus">Uniquement le surplus (maison d'abord)</option>
-            <option value="priority">Batterie prioritaire (avant la maison)</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="strategy-charge-grid">Recharge réseau</label>
-          <select id="strategy-charge-grid">
-            <option value="off">Solaire uniquement</option>
-            <option value="hc">Autoriser en heures creuses</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="strategy-charge-max-soc">Limite de charge (%)</label>
-          <input type="number" id="strategy-charge-max-soc" min="1" max="100" step="1">
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card__header"><h2 class="card__title">Stratégie de décharge de la batterie</h2></div>
-      <div class="grid-3">
-        <div class="field">
-          <label for="strategy-discharge-mode">Déclenchement</label>
-          <select id="strategy-discharge-mode">
-            <option value="asap">Dès que possible</option>
-            <option value="hp">Uniquement en heures pleines</option>
-            <option value="schedule">Plage horaire dédiée</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="strategy-discharge-start">Début de plage (h)</label>
-          <input type="number" id="strategy-discharge-start" min="0" max="24" step="0.5">
-        </div>
-        <div class="field">
-          <label for="strategy-discharge-end">Fin de plage (h)</label>
-          <input type="number" id="strategy-discharge-end" min="0" max="24" step="0.5">
-        </div>
-        <div class="field">
-          <label for="strategy-discharge-min-soc">Limite de décharge (%)</label>
-          <input type="number" id="strategy-discharge-min-soc" min="0" max="99" step="1">
-        </div>
-      </div>
-      <div class="grid-3">
-        <div class="field">
-          <label for="strategy-initial-soc">Niveau de charge de début (%)</label>
-          <input type="number" id="strategy-initial-soc" min="0" max="100" step="1">
-          <span class="field__hint">Niveau de la batterie au début de la journée simulée.</span>
-        </div>
-        <div class="field">
-          <label>Niveau de charge de fin (%)</label>
-          <input type="text" id="strategy-final-soc-display" disabled style="color:var(--text-faint);">
-          <span class="field__hint">Résultat de la simulation, par saison.</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card__header"><h2 class="card__title">Stratégie de vente du surplus</h2></div>
-      <div class="field" style="max-width:400px;">
-        <select id="strategy-sell-mode">
-          <option value="sell">Revente (au tarif défini dans l'onglet Localisation)</option>
-          <option value="zero">0 injection (surplus écrêté, perdu)</option>
-          <option value="free">Injection gratuite (envoyé au réseau, non rémunéré)</option>
-        </select>
-      </div>
-    </div>
-
-    <div id="strategy-errors" class="card" style="display:none; border-color:var(--accent-danger);">
-      <div class="card__header"><h2 class="card__title" style="color:var(--accent-danger);">Configuration invalide</h2></div>
-      <ul id="strategy-errors-list" style="margin:0; padding-left:20px; color:var(--accent-danger); font-size:13px;"></ul>
-    </div>
-
-    <div id="strategy-results"></div>
-
-  </section>
-
-  <!-- ============================================================
-       ONGLET 7 — BILAN FINANCIER
-       ============================================================ -->
-  <section id="tab-financial" class="tab-panel">
-    <div class="card">
-      <div class="card__header"><h2 class="card__title">Coût matériel</h2></div>
-      <div class="stat-row">
-        <div class="stat">
-          <span class="stat__label">Panneaux</span>
-          <span class="stat__value"><span id="stat-cost-panels">—</span><span class="stat__unit">€</span></span>
-        </div>
-        <div class="stat">
-          <span class="stat__label">Onduleur</span>
-          <span class="stat__value"><span id="stat-cost-inverter">—</span><span class="stat__unit">€</span></span>
-        </div>
-        <div class="stat">
-          <span class="stat__label">Batterie</span>
-          <span class="stat__value stat__value--battery"><span id="stat-cost-battery">—</span><span class="stat__unit">€</span></span>
-        </div>
-        <div class="stat">
-          <span class="stat__label">Total</span>
-          <span class="stat__value"><span id="stat-cost-total">—</span><span class="stat__unit">€</span></span>
-        </div>
-      </div>
-    </div>
     <div class="tab-panel__placeholder">
-      <strong>À venir :</strong> production estimée, économies annuelles, temps de retour sur investissement, courbe de rentabilité cumulée sur 20-25 ans.
+      <strong>À venir :</strong> économies annuelles, temps de retour sur investissement, courbe de rentabilité cumulée sur 20-25 ans.
     </div>
   </section>
 
@@ -788,6 +876,7 @@
 <script src="js/tabs/tab-location.js"></script>
 <script src="js/tabs/tab-material.js"></script>
 <script src="js/tabs/tab-consumption.js"></script>
+<script src="js/tabs/tab-installation.js"></script>
 <script src="js/tabs/tab-simulation.js"></script>
 <script src="js/tabs/tab-financial.js"></script>
 
