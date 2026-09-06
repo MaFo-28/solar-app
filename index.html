@@ -899,7 +899,7 @@
 
     <div class="card">
       <div class="card__header">
-        <h2 class="card__title">Production mensuelle réaliste (PVGIS)</h2>
+        <h2 class="card__title">Bilan annuel</h2>
       </div>
       <p id="panel-monthly-hint" class="field__hint">Récupérez d'abord les données PVGIS dans l'onglet Localisation pour voir cette estimation.</p>
       <div class="chart-wrap" id="panel-monthly-chart-wrap" style="margin-top:12px; display:none;">
@@ -915,6 +915,17 @@
           <span class="stat__value stat__value--battery"><span id="stat-annual-value">—</span><span class="stat__unit">€/an</span></span>
         </div>
       </div>
+      <p id="financial-annual-hint" class="field__hint" style="margin-top:14px;">Importez d'abord les données horaires PVGIS (onglet Localisation) et un répertoire de consommation valide (section ci-dessus) pour voir la répartition de la consommation, la courbe 365 jours et les indicateurs clés.</p>
+      <div class="stat-row" id="financial-annual-total-wrap" style="margin-top:14px; display:none;">
+        <div class="stat">
+          <span class="stat__label">Production annuelle consommée</span>
+          <span class="stat__value"><span id="stat-annual-consumed">—</span><span class="stat__unit">kWh/an</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Économie réalisée</span>
+          <span class="stat__value stat__value--battery"><span id="stat-annual-savings">—</span><span class="stat__unit">€/an</span></span>
+        </div>
+      </div>
     </div>
 
     <div class="card">
@@ -927,8 +938,50 @@
       </div>
     </div>
 
+    <div class="card" id="financial-utilization-card" style="display:none;">
+      <div class="card__header">
+        <h2 class="card__title">Taux d'utilisation (365 jours)</h2>
+      </div>
+      <p class="field__hint">Panneaux : production réelle nette rapportée à la production potentielle du jour. Batterie : pic de charge atteint dans la journée (% de la capacité).</p>
+      <div class="chart-wrap" style="margin-top:12px;">
+        <canvas id="chart-annual-utilization"></canvas>
+      </div>
+    </div>
+
+    <div class="card" id="financial-indicators-card" style="display:none;">
+      <div class="card__header">
+        <h2 class="card__title">Indicateurs clés</h2>
+      </div>
+      <div class="stat-row">
+        <div class="stat">
+          <span class="stat__label">Taux d'autoconsommation</span>
+          <span class="stat__value"><span id="stat-taux-autoconsommation">—</span><span class="stat__unit">%</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Taux d'autoproduction</span>
+          <span class="stat__value"><span id="stat-taux-autoproduction">—</span><span class="stat__unit">%</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Économie annuelle réalisée</span>
+          <span class="stat__value stat__value--battery"><span id="stat-indicator-savings">—</span><span class="stat__unit">€/an</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Économie revente du surplus</span>
+          <span class="stat__value stat__value--equinox"><span id="stat-indicator-resale">—</span><span class="stat__unit">€/an</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Coût total de l'installation</span>
+          <span class="stat__value"><span id="stat-indicator-cost">—</span><span class="stat__unit">€</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Retour sur investissement</span>
+          <span class="stat__value"><span id="stat-indicator-roi">—</span><span class="stat__unit">ans</span></span>
+        </div>
+      </div>
+    </div>
+
     <div class="tab-panel__placeholder">
-      <strong>À venir :</strong> économies annuelles, temps de retour sur investissement, courbe de rentabilité cumulée sur 20-25 ans.
+      <strong>À venir :</strong> export PDF du bilan.
     </div>
   </section>
 
@@ -950,6 +1003,7 @@
 <script src="js/consumption-utils.js"></script>
 <script src="js/pv-production.js"></script>
 <script src="js/battery-simulation.js"></script>
+<script src="js/annual-simulation.js"></script>
 <script src="js/state.js"></script>
 
 <!-- Onglets -->

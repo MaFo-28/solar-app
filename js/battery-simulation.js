@@ -200,6 +200,7 @@ window.BatterySimulation = (function () {
         hour,
         productionW,
         consumptionW,
+        solarToHouseW: solarToHouseAcW,
         batteryChargeW: batteryChargeDcW,
         batteryDischargeW: batteryDischargeAcW,
         gridImportW: importedW,

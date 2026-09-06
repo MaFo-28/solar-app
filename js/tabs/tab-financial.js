@@ -24,6 +24,7 @@ window.TabFinancial = (function () {
 
   let monthlyChart = null;
   let degradationChart = null;
+  let annualUtilizationChart = null;
   let consumptionDayCache = null; // { "MM-DD": [96 valeurs W] } une fois un répertoire validé, sinon null
 
   function init() {
@@ -94,7 +95,7 @@ window.TabFinancial = (function () {
   function recompute() {
     const install = getSelectedProfile();
     if (!install) return;
-    renderInstallationPrice(install);
+    const installCostTotal = renderInstallationPrice(install);
 
     const s = window.AppState.get();
     const loc = s.location;
@@ -103,6 +104,8 @@ window.TabFinancial = (function () {
       return;
     }
 
+    const inverter = (s.invertersDatabase || []).find((i) => i.id === install.inverter.selectedModelId) || null;
+    const battery = (s.batteriesDatabase || []).find((b) => b.id === install.battery.selectedModelId) || null;
     const ratedTotalWc = panel.powerWc * install.panels.count;
     const mask = install.panels.horizonMaskProfileId
       ? ((loc.horizonMaskProfiles.find((p) => p.id === install.panels.horizonMaskProfileId) || {}).mask || [])
@@ -110,6 +113,7 @@ window.TabFinancial = (function () {
 
     const annualProductionKwh = renderMonthlyProduction(loc, install.panels, ratedTotalWc, mask);
     renderDegradationChart(install.panels, annualProductionKwh);
+    renderAnnualBalance(install, inverter, battery, mask, ratedTotalWc, installCostTotal);
   }
 
   // ------------------------------------------------------------------
@@ -139,6 +143,7 @@ window.TabFinancial = (function () {
     document.getElementById("stat-cost-battery").textContent = batteryPrice.toFixed(0);
     document.getElementById("stat-cost-other").textContent = otherPrice.toFixed(0);
     document.getElementById("stat-cost-total").textContent = total.toFixed(0);
+    return total;
   }
 
   // ------------------------------------------------------------------
@@ -297,6 +302,193 @@ window.TabFinancial = (function () {
   }
 
   // ------------------------------------------------------------------
+  // Bilan annuel : moteur de simulation 365 jours (annual-simulation.js),
+  // à partir du cache horaire PVGIS (irradiance réelle) et du répertoire
+  // de consommation importé ci-dessous. Complète la barre 1 existante
+  // (production mensuelle réaliste, inchangée) par la répartition de la
+  // consommation, la courbe 365 jours et les indicateurs clés.
+  // ------------------------------------------------------------------
+  function renderAnnualBalance(install, inverter, battery, mask, ratedTotalWc, installCostTotal) {
+    const hint = document.getElementById("financial-annual-hint");
+    const totalWrap = document.getElementById("financial-annual-total-wrap");
+    const utilCard = document.getElementById("financial-utilization-card");
+    const indicatorsCard = document.getElementById("financial-indicators-card");
+
+    const s = window.AppState.get();
+    const loc = s.location;
+    const hourlyCache = loc.pvgisHourlyCache;
+
+    function hideAnnualSections(message) {
+      hint.style.display = "block";
+      hint.textContent = message;
+      totalWrap.style.display = "none";
+      utilCard.style.display = "none";
+      indicatorsCard.style.display = "none";
+      if (monthlyChart) {
+        monthlyChart.data.datasets = monthlyChart.data.datasets.slice(0, 1);
+        monthlyChart.options.plugins.legend.display = false;
+        monthlyChart.update();
+      }
+      if (annualUtilizationChart) {
+        annualUtilizationChart.destroy();
+        annualUtilizationChart = null;
+      }
+    }
+
+    if (!hourlyCache || !consumptionDayCache) {
+      hideAnnualSections(
+        "Importez d'abord les données horaires PVGIS (onglet Localisation) et un répertoire de consommation valide (section ci-dessus) pour voir la répartition de la consommation, la courbe 365 jours et les indicateurs clés."
+      );
+      return;
+    }
+
+    const expected = expectedDayKeys();
+    const hourlyByKey = {};
+    hourlyCache.days.forEach((d) => {
+      hourlyByKey[String(d.month).padStart(2, "0") + "-" + String(d.day).padStart(2, "0")] = d;
+    });
+    if (expected.some((k) => !hourlyByKey[k])) {
+      hideAnnualSections(
+        "Le cache horaire PVGIS de l'onglet Localisation ne couvre pas les 365 jours de l'année (import incomplet) — réimportez-le."
+      );
+      return;
+    }
+
+    hint.style.display = "none";
+    totalWrap.style.display = "flex";
+    utilCard.style.display = "block";
+    indicatorsCard.style.display = "block";
+
+    const result = window.AnnualSimulation.simulateYear({
+      pvgisHourlyDaysByKey: hourlyByKey,
+      consumptionDaysByKey: consumptionDayCache,
+      lat: loc.lat,
+      lng: loc.lng,
+      ratedTotalWc,
+      tiltDeg: install.panels.tilt,
+      orientationDeg: install.panels.orientation,
+      mask,
+      battery,
+      hasInverter: !!inverter,
+      inverterEfficiencyPct: inverter ? inverter.efficiencyPct : 100,
+      chargeStrategy: install.chargeStrategy,
+      dischargeStrategy: install.dischargeStrategy,
+      sellMode: install.sellMode,
+      tariffs: loc.tariffs,
+      sellTariffPerKwh: loc.sellTariffPerKwh,
+      initialSocPct: 10,
+    });
+
+    document.getElementById("stat-annual-consumed").textContent = result.indicators.productionConsommeeTotalKWh.toFixed(0);
+    document.getElementById("stat-annual-savings").textContent = result.indicators.economieRealiseeEur.toFixed(0);
+
+    renderConsumptionStackOnMonthlyChart(result.months);
+    renderUtilizationChart(result.days, result.hasBattery);
+    renderIndicators(result.indicators, installCostTotal);
+  }
+
+  /**
+   * Ajoute la barre 2 (empilement autoconsommation directe / batterie /
+   * réseau) au graphique déjà tracé par renderMonthlyProduction, sans
+   * toucher à la barre 1 (production mensuelle réaliste, dataset 0).
+   */
+  function renderConsumptionStackOnMonthlyChart(months) {
+    if (!monthlyChart) return;
+    monthlyChart.data.datasets = monthlyChart.data.datasets.slice(0, 1);
+    monthlyChart.data.datasets[0].stack = "prod";
+    monthlyChart.data.datasets.push(
+      {
+        label: "Autoconsommation directe",
+        data: months.map((m) => m.productionAutoconsommeeDirecteKWh),
+        backgroundColor: "rgba(62,201,167,0.65)",
+        stack: "conso",
+        borderRadius: 3,
+      },
+      {
+        label: "Autoconsommation batterie",
+        data: months.map((m) => m.productionViaBatterieKWh),
+        backgroundColor: "rgba(155,140,255,0.65)",
+        stack: "conso",
+        borderRadius: 3,
+      },
+      {
+        label: "Réseau",
+        data: months.map((m) => m.consommationReseauKWh),
+        backgroundColor: "rgba(224,87,91,0.65)",
+        stack: "conso",
+        borderRadius: 3,
+      }
+    );
+    monthlyChart.options.plugins.legend.display = true;
+    monthlyChart.update();
+  }
+
+  function renderUtilizationChart(days, hasBattery) {
+    const datasets = [
+      {
+        label: "Taux d'utilisation panneaux (%)",
+        data: days.map((d) => (d.productionPotentielleKWh > 0 ? (d.productionReelleKWh / d.productionPotentielleKWh) * 100 : 0)),
+        borderColor: "#f5a623",
+        backgroundColor: "rgba(245,166,35,0.08)",
+        pointRadius: 0,
+        borderWidth: 1,
+        tension: 0.1,
+      },
+    ];
+    if (hasBattery) {
+      datasets.push({
+        label: "Pic de charge batterie (%)",
+        data: days.map((d) => d.picChargeBatteriePct),
+        borderColor: "#9b8cff",
+        backgroundColor: "rgba(155,140,255,0.08)",
+        pointRadius: 0,
+        borderWidth: 1,
+        tension: 0.1,
+      });
+    }
+
+    const ctx2d = document.getElementById("chart-annual-utilization").getContext("2d");
+    if (annualUtilizationChart) annualUtilizationChart.destroy();
+    annualUtilizationChart = new Chart(ctx2d, {
+      type: "line",
+      data: { labels: days.map((d, i) => i + 1), datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            title: { display: true, text: "Jour de l'année", color: "#9a9ea8" },
+            ticks: { color: "#9a9ea8", maxTicksLimit: 12 },
+            grid: { display: false },
+          },
+          y: {
+            min: 0,
+            max: 100,
+            title: { display: true, text: "%", color: "#9a9ea8" },
+            ticks: { color: "#9a9ea8" },
+            grid: { color: "#23272f" },
+          },
+        },
+        plugins: {
+          legend: { labels: { color: "#e9e7e0" } },
+        },
+      },
+    });
+  }
+
+  function renderIndicators(indicators, installCostTotal) {
+    document.getElementById("stat-taux-autoconsommation").textContent = indicators.tauxAutoconsommationPct.toFixed(0);
+    document.getElementById("stat-taux-autoproduction").textContent = indicators.tauxAutoproductionPct.toFixed(0);
+    document.getElementById("stat-indicator-savings").textContent = indicators.economieRealiseeEur.toFixed(0);
+    document.getElementById("stat-indicator-resale").textContent = indicators.economieReventeEur.toFixed(0);
+    document.getElementById("stat-indicator-cost").textContent = installCostTotal.toFixed(0);
+    const roi = installCostTotal > 0 && indicators.economieRealiseeEur > 0
+      ? installCostTotal / indicators.economieRealiseeEur
+      : null;
+    document.getElementById("stat-indicator-roi").textContent = roi !== null ? roi.toFixed(1) : "—";
+  }
+
+  // ------------------------------------------------------------------
   // Profil de consommation : import d'un répertoire de 365 fichiers
   // journaliers (un par jour de l'année, nommés MM-DD.csv), avec
   // vérification stricte du format avant tout calcul — voir
@@ -370,11 +562,13 @@ window.TabFinancial = (function () {
         result.errors
       );
       renderConsumptionReport();
+      recompute();
       return;
     }
     consumptionDayCache = result.days;
     setConsumptionStatus("✓ Répertoire valide : 365 fichiers chargés.", []);
     renderConsumptionReport();
+    recompute();
   }
 
   function setConsumptionStatus(text, errors) {
