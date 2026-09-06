@@ -166,6 +166,7 @@ window.AnnualSimulation = (function () {
 
         let directKwh = 0;
         let viaBatteryKwh = 0;
+        let chargeeDansBatterieKwh = 0;
         let surplusKwh = 0;
         let peakSocPct = 0;
         result.points.forEach((pt) => {
@@ -176,6 +177,7 @@ window.AnnualSimulation = (function () {
           }
           directKwh += (pt.solarToHouseW / 1000) * 0.25;
           viaBatteryKwh += (pt.batteryDischargeW / 1000) * 0.25;
+          chargeeDansBatterieKwh += (pt.batteryChargeW / 1000) * 0.25;
           surplusKwh += (pt.gridExportW / 1000) * 0.25;
           if (pt.socPct > peakSocPct) peakSocPct = pt.socPct;
         });
@@ -192,6 +194,7 @@ window.AnnualSimulation = (function () {
           productionReelleKWh: directKwh + viaBatteryKwh + surplusKwh,
           productionAutoconsommeeDirecteKWh: directKwh,
           productionViaBatterieKWh: viaBatteryKwh,
+          chargeeDansBatterieKWh: hasBattery ? chargeeDansBatterieKwh : 0,
           surplusVenduKWh: surplusKwh,
           consommationReseauKWh,
           consommationTotaleKWh,

@@ -427,7 +427,11 @@ window.TabFinancial = (function () {
     const datasets = [
       {
         label: "Taux d'utilisation panneaux (%)",
-        data: days.map((d) => (d.productionPotentielleKWh > 0 ? (d.productionReelleKWh / d.productionPotentielleKWh) * 100 : 0)),
+        data: days.map((d) =>
+          d.productionReelleKWh > 0
+            ? ((d.productionAutoconsommeeDirecteKWh + d.chargeeDansBatterieKWh) / d.productionReelleKWh) * 100
+            : 0
+        ),
         borderColor: "#f5a623",
         backgroundColor: "rgba(245,166,35,0.08)",
         pointRadius: 0,
