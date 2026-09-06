@@ -98,9 +98,12 @@ window.AppState = (function () {
         ],
         sellTariffPerKwh: 0.04, // prix de revente du surplus, €/kWh — valeur indicative à ajuster selon contrat
         pvgisCache: null,     // résultat brut PVGIS mis en cache après requête
-        // Série horaire PVGIS ("Hourly data" / seriescalc) pour une
-        // année choisie par l'utilisateur, interpolée à pas de 15 min :
-        // { year, days: [{ month, day, values15min: [96 valeurs W] }] }.
+        // Série horaire PVGIS ("Hourly data" / seriescalc, irradiance
+        // brute sur plan horizontal) pour une année choisie par
+        // l'utilisateur, convertie en heure locale (Europe/Paris) et
+        // interpolée à pas de 15 min :
+        // { year, days: [{ month, day, gb15min, gd15min, hSun15min,
+        //   t2m15min : [96 valeurs chacun] }] }.
         // Structure distincte de pvgisCache (mensuel) : forme différente,
         // et les deux coexistent (renommée "Données mensuelles PVGIS"
         // pour la distinguer de "Données journalière PVGIS" ci-dessous).

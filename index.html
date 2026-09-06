@@ -232,19 +232,16 @@
     <div class="card">
       <div class="card__header">
         <h2 class="card__title">Données journalière PVGIS (irradiance réelle)</h2>
+        <div class="field" style="max-width:120px; margin-bottom:0;">
+          <label for="loc-pvgis-hourly-year">Année</label>
+          <input type="number" id="loc-pvgis-hourly-year" step="1" min="2005" value="2023">
+        </div>
         <button id="loc-open-pvgis-hourly" class="btn btn--sm">Ouvrir PVGIS (données horaires)</button>
       </div>
-      <p class="field__hint">Pour ce volume de données, PVGIS ne permet pas le copier-coller : sur la page "Hourly data" qui s'ouvre, choisissez votre période puis téléchargez le CSV, et importez-le ci-dessous.</p>
+      <p class="field__hint">Pour ce volume de données, PVGIS ne permet pas le copier-coller : sur la page "Hourly data" qui s'ouvre, téléchargez le CSV, et importez-le ci-dessous.</p>
       <button id="loc-pvgis-hourly-import" class="btn btn--sm">Importer les données horaires</button>
       <input type="file" id="loc-pvgis-hourly-input" accept=".csv" style="display:none">
       <p id="loc-pvgis-hourly-status" class="field__hint" style="margin-top:8px;"></p>
-      <div id="loc-pvgis-hourly-year-picker" class="field-row" style="align-items:flex-end; display:none; margin-top:8px;">
-        <div class="field" style="flex:1; margin-bottom:0;">
-          <label for="loc-pvgis-hourly-year-select">Le fichier contient plusieurs années : laquelle utiliser ?</label>
-          <select id="loc-pvgis-hourly-year-select"></select>
-        </div>
-        <button id="loc-pvgis-hourly-year-confirm" class="btn btn--sm">Utiliser cette année</button>
-      </div>
       <div id="loc-pvgis-hourly-summary" style="margin-top:10px;"></div>
     </div>
 
@@ -888,7 +885,7 @@
 
     <div class="card">
       <div class="card__header">
-        <h2 class="card__title">Rapport de consommation</h2>
+        <h2 class="card__title">Rapport de consommation initiale</h2>
       </div>
       <p id="financial-consumption-report-hint" class="field__hint">Chargez un répertoire de consommation valide (section "Profil de consommation" ci-dessus) pour voir ce rapport.</p>
       <table class="data-table" id="financial-consumption-report-table" style="display:none;">
