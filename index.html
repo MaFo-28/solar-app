@@ -916,16 +916,26 @@
         </div>
       </div>
       <p id="financial-annual-hint" class="field__hint" style="margin-top:14px;">Importez d'abord les données horaires PVGIS (onglet Localisation) et un répertoire de consommation valide (section ci-dessus) pour voir la répartition de la consommation, la courbe 365 jours et les indicateurs clés.</p>
-      <div class="stat-row" id="financial-annual-total-wrap" style="margin-top:14px; display:none;">
-        <div class="stat">
-          <span class="stat__label">Production annuelle consommée</span>
-          <span class="stat__value"><span id="stat-annual-consumed">—</span><span class="stat__unit">kWh/an</span></span>
-        </div>
-        <div class="stat">
-          <span class="stat__label">Économie réalisée</span>
-          <span class="stat__value stat__value--battery"><span id="stat-annual-savings">—</span><span class="stat__unit">€/an</span></span>
-        </div>
-      </div>
+	  <div class="stat-row" id="financial-annual-total-wrap" style="margin-top:14px; display:none;">
+	    <div class="stat-stack">
+	      <div class="stat">
+	        <span class="stat__label">Production annuelle simulée</span>
+	        <span class="stat__value"><span id="stat-annual-simulated">—</span><span class="stat__unit">kWh/an</span></span>
+	      </div>
+	    </div>
+	    <div class="stat">
+	    	 <span class="stat__label">Économie réalisée</span>
+	    	 <span class="stat__value stat__value--battery"><span id="stat-annual-savings">—</span><span class="stat__unit">€/an</span></span>
+	    </div>
+	      <div class="stat">
+	        <span class="stat__label">Production annuelle consommée</span>
+	        <span class="stat__value"><span id="stat-annual-consumed">—</span><span class="stat__unit">kWh/an</span></span>
+	      </div>
+	      <div class="stat">
+	        <span class="stat__label">Production annuelle injectée ou perdue</span>
+	        <span class="stat__value"><span id="stat-annual-sold">—</span><span class="stat__unit">kWh/an</span></span>
+	      </div>
+	  </div>
     </div>
 
     <div class="card">

@@ -381,6 +381,8 @@ window.TabFinancial = (function () {
 
     document.getElementById("stat-annual-consumed").textContent = result.indicators.productionConsommeeTotalKWh.toFixed(0);
     document.getElementById("stat-annual-savings").textContent = result.indicators.economieRealiseeEur.toFixed(0);
+    document.getElementById("stat-annual-simulated").textContent = result.indicators.productionSimuleeTotalKWh.toFixed(0);
+    document.getElementById("stat-annual-sold").textContent = result.indicators.surplusInjecteKWh.toFixed(0);
 
     renderConsumptionStackOnMonthlyChart(result.months);
     renderUtilizationChart(result.days, result.hasBattery);

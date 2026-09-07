@@ -9,13 +9,13 @@
  *
  * Modèle de couplage retenu (important, conditionne tous les calculs
  * de rendement) :
- *  - Si la batterie a une entrée solaire directe (hasSolarInput) :
+ *  - Si la batterie a une entrée solaire directe (hasSolarInput) ET
+ *    qu'aucun onduleur séparé n'est sélectionné :
  *    elle est couplée en DC avec son propre convertisseur intégré
  *    (comme la plupart des produits "tout-en-un" du marché). TOUT le
  *    solaire passe par ce sous-système : vers la batterie via son
  *    rendement de charge, ou directement vers la maison/le réseau via
- *    son "rendement solaire" (solarInputEfficiencyPct). L'onduleur
- *    séparé (onglet Onduleur) n'intervient pas dans ce cas.
+ *    son "rendement solaire" (solarInputEfficiencyPct).
  *  - Sinon (pas de batterie, ou batterie sans entrée solaire) : le
  *    solaire doit obligatoirement passer par l'onduleur séparé pour
  *    devenir utilisable (maison ou réseau). Sans onduleur dans ce
@@ -66,8 +66,8 @@ window.BatterySimulation = (function () {
     const stepHours = p.stepMinutes / 60;
     const battery = p.battery;
     const batteryCount = p.batteryCount || 1;
-    const dcCoupled = !!(battery && battery.hasSolarInput);
-
+    const dcCoupled = !!(battery && battery.hasSolarInput) && !p.hasInverter;
+	
     const capacityKwh = battery ? battery.capacityKwh * batteryCount : 0;
     const maxChargeW = battery ? battery.chargePowerW * batteryCount : 0;
     const maxDischargeW = battery ? battery.dischargePowerW * batteryCount : 0;

@@ -191,7 +191,7 @@ window.AnnualSimulation = (function () {
           date: key,
           month: m + 1,
           productionPotentielleKWh: result.totalProductionKwh,
-          productionReelleKWh: directKwh + viaBatteryKwh + surplusKwh,
+          productionReelleKWh: directKwh + chargeeDansBatterieKwh + surplusKwh,
           productionAutoconsommeeDirecteKWh: directKwh,
           productionViaBatterieKWh: viaBatteryKwh,
           chargeeDansBatterieKWh: hasBattery ? chargeeDansBatterieKwh : 0,
@@ -234,6 +234,8 @@ window.AnnualSimulation = (function () {
         productionPotentielleTotalKWh: sumField(days, "productionPotentielleKWh"),
         productionConsommeeTotalKWh: totalAutoconsommeeKWh,
         consommationTotaleKWh: totalConsommationKWh,
+		productionSimuleeTotalKWh: totalProductionReelleKWh,
+		surplusInjecteKWh: totalSurplusKWh,
       },
     };
   }
