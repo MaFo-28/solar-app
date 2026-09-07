@@ -169,6 +169,7 @@ window.AnnualSimulation = (function () {
         let chargeeDansBatterieKwh = 0;
         let surplusKwh = 0;
         let peakSocPct = 0;
+        let troughSocPct = 100;
         result.points.forEach((pt) => {
           const autoconsommeeW = pt.solarToHouseW + pt.batteryDischargeW;
           if (autoconsommeeW > 0) {
@@ -180,6 +181,7 @@ window.AnnualSimulation = (function () {
           chargeeDansBatterieKwh += (pt.batteryChargeW / 1000) * 0.25;
           surplusKwh += (pt.gridExportW / 1000) * 0.25;
           if (pt.socPct > peakSocPct) peakSocPct = pt.socPct;
+          if (pt.socPct < troughSocPct) troughSocPct = pt.socPct;
         });
 
         const consommationTotaleKWh = result.totalConsumptionKwh;
@@ -199,6 +201,7 @@ window.AnnualSimulation = (function () {
           consommationReseauKWh,
           consommationTotaleKWh,
           picChargeBatteriePct: hasBattery ? peakSocPct : null,
+          picDechargeBatteriePct: hasBattery ? troughSocPct : null,
         });
       }
     }

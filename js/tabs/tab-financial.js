@@ -112,7 +112,7 @@ window.TabFinancial = (function () {
       : [];
 
     const annualProductionKwh = renderMonthlyProduction(loc, install.panels, ratedTotalWc, mask);
-    renderDegradationChart(install.panels, annualProductionKwh);
+   // renderDegradationChart(install.panels, annualProductionKwh);
     renderAnnualBalance(install, inverter, battery, mask, ratedTotalWc, installCostTotal);
   }
 
@@ -452,6 +452,17 @@ window.TabFinancial = (function () {
         tension: 0.1,
       });
     }
+	if (hasBattery) {
+	  datasets.push({
+		label: "Décharge batterie (%)",
+		data: days.map((d) => d.picDechargeBatteriePct),
+		borderColor: "#5bc0eb",
+		backgroundColor: "rgba(91,192,235,0.08)",
+		pointRadius: 0,
+		borderWidth: 1,
+		tension: 0.1,
+	  });
+	}
 
     const ctx2d = document.getElementById("chart-annual-utilization").getContext("2d");
     if (annualUtilizationChart) annualUtilizationChart.destroy();
@@ -462,11 +473,47 @@ window.TabFinancial = (function () {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-          x: {
-            title: { display: true, text: "Jour de l'année", color: "#9a9ea8" },
-            ticks: { color: "#9a9ea8", maxTicksLimit: 12 },
-            grid: { display: false },
-          },
+			x: {
+			  title: { display: true, text: "Mois", color: "#9a9ea8" },
+
+			  afterBuildTicks: function(axis) {
+				const joursDebutMois = [
+				  1, 32, 60, 91, 121, 152,
+				  182, 213, 244, 274, 305, 335
+				];
+
+				axis.ticks = joursDebutMois.map(jour => ({
+				  value: jour - 1
+				}));
+			  },
+
+			  ticks: {
+				color: "#9a9ea8",
+				callback: function(value) {
+				  const mois = [
+					"Jan", "Fév", "Mar", "Avr", "Mai", "Juin",
+					"Juil", "Août", "Sep", "Oct", "Nov", "Déc"
+				  ];
+
+				  const jour = Number(value) + 1;
+
+				  const debutMois = [
+					1, 32, 60, 91, 121, 152,
+					182, 213, 244, 274, 305, 335
+				  ];
+
+				  const indexMois = debutMois.findIndex((debut, i) =>
+					jour >= debut && (i === 11 || jour < debutMois[i + 1])
+				  );
+
+				  return indexMois >= 0 ? mois[indexMois] : "";
+				},
+			  },
+
+			  grid: {
+				color: "#23272f",
+			  },
+			},
           y: {
             min: 0,
             max: 100,
@@ -689,8 +736,9 @@ window.TabFinancial = (function () {
     const totalKwh = t.hpKwh + t.hcKwh;
     const totalCost = t.hpCost + t.hcCost;
     const style = isTotal ? ' style="font-weight:600;"' : "";
+	const className = isTotal ? ' class="stat__total "' : "";
     return (
-      "<tr" + style + "><td>" + escapeHtml(label) + "</td>" +
+      "<tr" + className + style + "><td>" + escapeHtml(label) + "</td>" +
       "<td>" + t.hpKwh.toFixed(2) + "</td>" +
       "<td>" + t.hcKwh.toFixed(2) + "</td>" +
       "<td>" + totalKwh.toFixed(2) + "</td>" +

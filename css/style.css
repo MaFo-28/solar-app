@@ -13,6 +13,7 @@
   --text: #e9e7e0;
   --text-dim: #9a9ea8;
   --text-faint: #676b74;
+  --text-red: #e0575b;
 
   --accent-solar: #f5a623;
   --accent-solar-dim: #7a5a1f;
@@ -359,6 +360,13 @@ body {
   color: var(--accent-solar);
 }
 
+.stat__value_red {
+  font-family: var(--font-data);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-red);
+}
+
 .stat__value--battery { color: var(--accent-battery); }
 .stat__value--equinox { color: var(--accent-equinox); }
 
@@ -429,6 +437,13 @@ table.data-table {
 }
 
 .data-table select:focus { border-color: var(--accent-solar); }
+
+.stat__total {
+  font-family: var(--font-data);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-solar);
+}
 
 /* ============================================================
    Calendrier de consommation : 12 blocs mensuels
