@@ -75,13 +75,18 @@ window.TabInstallation = (function () {
   function renderProfileSelect() {
     const select = document.getElementById("install-profile-select");
     const profiles = getProfiles();
+
     select.innerHTML = "";
-    profiles.forEach((p) => {
-      const opt = document.createElement("option");
-      opt.value = p.id;
-      opt.textContent = p.name;
-      select.appendChild(opt);
-    });
+
+    profiles
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }))
+      .forEach((p) => {
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = p.name;
+        select.appendChild(opt);
+      });
+
     const s = window.AppState.get();
     select.value = s.activeInstallationProfileId || (profiles[0] && profiles[0].id) || "";
   }

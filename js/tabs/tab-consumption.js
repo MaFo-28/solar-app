@@ -77,16 +77,21 @@ window.TabConsumption = (function () {
   function renderProfileSelect() {
     const select = document.getElementById("consumption-profile-select");
     const c = window.AppState.get().consumption;
+
     select.innerHTML = "";
-    c.profiles.forEach((p) => {
-      const opt = document.createElement("option");
-      opt.value = p.id;
-      opt.textContent = p.name;
-      select.appendChild(opt);
-    });
+
+    c.profiles
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }))
+      .forEach((p) => {
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = p.name;
+        select.appendChild(opt);
+      });
+
     select.value = c.activeProfileId;
   }
-
+  
   function bindProfileButtons() {
     window.bindOnce(document.getElementById("consumption-profile-select"), "change", function (e) {
       const s = window.AppState.get();
