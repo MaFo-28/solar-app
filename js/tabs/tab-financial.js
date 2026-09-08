@@ -534,7 +534,7 @@ window.TabFinancial = (function () {
     document.getElementById("stat-taux-autoproduction").textContent = indicators.tauxAutoproductionPct.toFixed(0);
     document.getElementById("stat-indicator-savings").textContent = indicators.economieRealiseeEur.toFixed(0);
     document.getElementById("stat-indicator-resale").textContent = indicators.economieReventeEur.toFixed(0);
-    document.getElementById("stat-indicator-cost").textContent = installCostTotal.toFixed(0);
+//    document.getElementById("stat-indicator-cost").textContent = installCostTotal.toFixed(0);
     const roi = installCostTotal > 0 && indicators.economieRealiseeEur > 0
       ? installCostTotal / indicators.economieRealiseeEur
       : null;

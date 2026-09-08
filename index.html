@@ -883,11 +883,39 @@
       </div>
     </div>
 
+    <div class="card card--price" id="financial-indicators-card" style="display:none;">
+      <div class="card__header">
+        <h2 class="card__title">Indicateurs clés</h2>
+      </div>
+      <div class="stat-row">
+        <div class="stat">
+          <span class="stat__label">Taux d'autoconsommation</span>
+          <span class="stat__value"><span id="stat-taux-autoconsommation">—</span><span class="stat__unit">%</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Taux d'autoproduction</span>
+          <span class="stat__value"><span id="stat-taux-autoproduction">—</span><span class="stat__unit">%</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Économie annuelle réalisée</span>
+          <span class="stat__value stat__value--battery"><span id="stat-indicator-savings">—</span><span class="stat__unit">€/an</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Économie revente du surplus</span>
+          <span class="stat__value stat__value--equinox"><span id="stat-indicator-resale">—</span><span class="stat__unit">€/an</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Retour sur investissement</span>
+          <span class="stat__value"><span id="stat-indicator-roi">—</span><span class="stat__unit">ans</span></span>
+        </div>
+      </div>
+    </div>
+
     <div class="card">
       <div class="card__header">
         <h2 class="card__title">Rapport de consommation initiale</h2>
       </div>
-      <p id="financial-consumption-report-hint" class="field__hint">Chargez un répertoire de consommation valide (section "Profil de consommation" ci-dessus) pour voir ce rapport.</p>
+      <p id="financial-consumption-report-hint" class="field__hint">Chargez un répertoire de consommation valide pour voir ce rapport.</p>
       <table class="data-table" id="financial-consumption-report-table" style="display:none;">
         <thead>
           <tr><th></th><th>Consommation HP (kWh)</th><th>Consommation HC (kWh)</th><th>Consommation totale (kWh)</th><th>Coût HP (€)</th><th>Coût HC (€)</th><th>Coût total (€)</th></tr>
@@ -945,38 +973,6 @@
       <p class="field__hint">Panneaux : production réelle nette rapportée à la production potentielle du jour. Batterie : pic de charge atteint dans la journée (% de la capacité).</p>
       <div class="chart-wrap" style="margin-top:12px;">
         <canvas id="chart-annual-utilization"></canvas>
-      </div>
-    </div>
-
-    <div class="card" id="financial-indicators-card" style="display:none;">
-      <div class="card__header">
-        <h2 class="card__title">Indicateurs clés</h2>
-      </div>
-      <div class="stat-row">
-        <div class="stat">
-          <span class="stat__label">Taux d'autoconsommation</span>
-          <span class="stat__value"><span id="stat-taux-autoconsommation">—</span><span class="stat__unit">%</span></span>
-        </div>
-        <div class="stat">
-          <span class="stat__label">Taux d'autoproduction</span>
-          <span class="stat__value"><span id="stat-taux-autoproduction">—</span><span class="stat__unit">%</span></span>
-        </div>
-        <div class="stat">
-          <span class="stat__label">Économie annuelle réalisée</span>
-          <span class="stat__value stat__value--battery"><span id="stat-indicator-savings">—</span><span class="stat__unit">€/an</span></span>
-        </div>
-        <div class="stat">
-          <span class="stat__label">Économie revente du surplus</span>
-          <span class="stat__value stat__value--equinox"><span id="stat-indicator-resale">—</span><span class="stat__unit">€/an</span></span>
-        </div>
-        <div class="stat">
-          <span class="stat__label">Coût total de l'installation</span>
-          <span class="stat__value"><span id="stat-indicator-cost">—</span><span class="stat__unit">€</span></span>
-        </div>
-        <div class="stat">
-          <span class="stat__label">Retour sur investissement</span>
-          <span class="stat__value"><span id="stat-indicator-roi">—</span><span class="stat__unit">ans</span></span>
-        </div>
       </div>
     </div>
 
