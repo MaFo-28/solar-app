@@ -62,6 +62,7 @@ Pour chaque installation, il est possible de définir :
 * la stratégie de charge et de décharge de la batterie
 * les différents coûts complémentaires
 * le choix de la revente du surplus ou non
+
 Les coûts complémentaires sont librement ajoutables : pose, coffret de protection DC, frais administratifs, etc.
 
 Une installation correspond actuellement à un seul groupe de panneaux avec une orientation et une inclinaison uniques.
