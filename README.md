@@ -47,6 +47,10 @@ La base fournie constitue une base de départ et peut être enrichie directement
 
 La base matériel peut également être extraite dans un fichier séparé puis réimportée.
 
+### Rendements
+
+Les rendements définis dans la base matériel sont ensuite appliqués aux différents flux d'énergie.
+
 ### 3. Installation
 
 Création de profils d'installation à partir des équipements de la base matériel.
@@ -79,10 +83,6 @@ La stratégie de batterie permet notamment de définir :
 Les puissances maximales de charge et de décharge sont définies dans la fiche de la batterie.
 
 Les différents chemins d'énergie et leurs rendements sont simulés, notamment le fonctionnement des batteries AC pouvant suivre le chemin `PV → maison → batterie → maison`.
-
-### Rendements
-
-Les rendements définis dans la base matériel sont ensuite appliqués aux différents flux d'énergie.
 
 ### 4. Consommation
 
