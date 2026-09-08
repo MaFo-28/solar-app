@@ -446,7 +446,9 @@ window.TabFinancial = (function () {
         label: "Pic de charge batterie (%)",
         data: days.map((d) => d.picChargeBatteriePct),
         borderColor: "#9b8cff",
-        backgroundColor: "rgba(155,140,255,0.08)",
+        //backgroundColor: "rgba(155,140,255,0.08)",
+		//borderColor: "#9b59b6",
+		backgroundColor: "rgba(155,89,182,0.08)",
         pointRadius: 0,
         borderWidth: 1,
         tension: 0.1,
@@ -458,6 +460,18 @@ window.TabFinancial = (function () {
 		data: days.map((d) => d.picDechargeBatteriePct),
 		borderColor: "#5bc0eb",
 		backgroundColor: "rgba(91,192,235,0.08)",
+		pointRadius: 0,
+		borderWidth: 1,
+		tension: 0.1,
+	  });
+	}
+
+	if (hasBattery) {
+	  datasets.push({
+		label: "Utilisation batterie (%)",
+		data: days.map((d) => d.moyenneUtilisationBatteriePct),
+		borderColor: "#5cb85c",
+		backgroundColor: "rgba(92,184,92,0.08)",
 		pointRadius: 0,
 		borderWidth: 1,
 		tension: 0.1,
