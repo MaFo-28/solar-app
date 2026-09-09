@@ -850,7 +850,7 @@
         <input type="file" id="financial-consumption-dir-input" webkitdirectory multiple style="display:none">
         <span id="financial-consumption-dir-name" class="field__hint" style="margin-left:6px;">aucun répertoire chargé</span>
       </div>
-      <p class="field__hint">Répertoire contenant 365 fichiers CSV nommés MM-DD.csv (un par jour de l'année, en-tête "heure;puissance_w", 96 lignes à pas de 15 minutes, puissance moyenne en W).</p>
+      <p class="field__hint">Répertoire contenant 365 fichiers CSV nommés MM-DD.csv (un par jour de l'année, en-tête "heure;puissance_w", 96 lignes par pas de 15 minutes, puissance moyenne en W).</p>
       <p id="financial-consumption-status" class="field__hint" style="margin-top:8px;"></p>
       <ul id="financial-consumption-errors" style="display:none; margin:8px 0 0; padding-left:20px; color:var(--accent-danger); font-size:12px; max-height:220px; overflow:auto;"></ul>
     </div>
@@ -935,7 +935,7 @@
       </div>
       <div class="stat-row" id="panel-monthly-total-wrap" style="margin-top:14px; display:none;">
         <div class="stat">
-          <span class="stat__label">Production annuelle estimée</span>
+          <span class="stat__label">Production estimée</span>
           <span class="stat__value"><span id="stat-annual-production">—</span><span class="stat__unit">kWh/an</span></span>
         </div>
         <div class="stat">
@@ -947,22 +947,46 @@
 	  <div class="stat-row" id="financial-annual-total-wrap" style="margin-top:14px; display:none;">
 	    <div class="stat-stack">
 	      <div class="stat">
-	        <span class="stat__label">Production annuelle simulée</span>
+	        <span class="stat__label">Production simulée</span>
 	        <span class="stat__value"><span id="stat-annual-simulated">—</span><span class="stat__unit">kWh/an</span></span>
 	      </div>
+	      <div class="stat">
+	        <span class="stat__label">Energie chargée</span>
+	        <span class="stat__value"><span id="stat-annual-charged">—</span><span class="stat__unit">kWh/an</span></span>
+	      </div>
 	    </div>
-	    <div class="stat">
+
+	    <div class="stat-stack">
+	      <div class="stat">
 	    	 <span class="stat__label">Économie réalisée</span>
 	    	 <span class="stat__value stat__value--battery"><span id="stat-annual-savings">—</span><span class="stat__unit">€/an</span></span>
-	    </div>
-	      <div class="stat">
-	        <span class="stat__label">Production annuelle consommée</span>
-	        <span class="stat__value"><span id="stat-annual-consumed">—</span><span class="stat__unit">kWh/an</span></span>
 	      </div>
 	      <div class="stat">
-	        <span class="stat__label">Production annuelle injectée ou perdue</span>
+	        <span class="stat__label">Energie déchargée</span>
+	        <span class="stat__value stat__value--battery"><span id="stat-annual-decharged">—</span><span class="stat__unit">kWh/an</span></span>
+	      </div>
+	    </div>
+
+	    <div class="stat-stack">
+	      <div class="stat">
+	        <span class="stat__label">Production consommée brute</span>
+	        <span class="stat__value"><span id="stat-annual-consumed-gross">—</span><span class="stat__unit">kWh/an</span></span>
+	      </div>
+	      <div class="stat">
+	        <span class="stat__label">Consommation réseau</span>
+	        <span class="stat__value_red"><span id="stat-annual-network-consumed">—</span><span class="stat__unit">kWh/an</span></span>
+	      </div>
+	    </div>
+	    <div class="stat-stack">
+	      <div class="stat">
+	        <span class="stat__label">Production consommée nette</span>
+	        <span class="stat__value"><span id="stat-annual-consumed-net">—</span><span class="stat__unit">kWh/an</span></span>
+	      </div>
+	      <div class="stat">
+	        <span class="stat__label">Production injectée ou perdue</span>
 	        <span class="stat__value_red"><span id="stat-annual-sold">—</span><span class="stat__unit">kWh/an</span></span>
 	      </div>
+	    </div>
 	  </div>
     </div>
 

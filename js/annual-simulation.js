@@ -227,7 +227,8 @@ window.AnnualSimulation = (function () {
     }
 
     const totalProductionReelleKWh = sumField(days, "productionReelleKWh");
-    const totalAutoconsommeeKWh = sumField(days, "productionAutoconsommeeDirecteKWh") + sumField(days, "productionViaBatterieKWh");
+    const totalAutoconsommeeBrutKWh = sumField(days, "productionAutoconsommeeDirecteKWh") + sumField(days, "chargeeDansBatterieKWh");
+    const totalAutoconsommeeNetKWh = sumField(days, "productionAutoconsommeeDirecteKWh") + sumField(days, "productionViaBatterieKWh");
     const totalConsommationKWh = sumField(days, "consommationTotaleKWh");
     const totalSurplusKWh = sumField(days, "surplusVenduKWh");
     const economieReventeEur = p.sellMode === "sell" ? totalSurplusKWh * p.sellTariffPerKwh : 0;
@@ -237,16 +238,20 @@ window.AnnualSimulation = (function () {
       months,
       hasBattery,
       indicators: {
-        tauxAutoconsommationPct: totalProductionReelleKWh > 0 ? (totalAutoconsommeeKWh / totalProductionReelleKWh) * 100 : 0,
-        tauxAutoproductionPct: totalConsommationKWh > 0 ? (totalAutoconsommeeKWh / totalConsommationKWh) * 100 : 0,
+        tauxAutoconsommationPct: totalProductionReelleKWh > 0 ? (totalAutoconsommeeBrutKWh / totalProductionReelleKWh) * 100 : 0,
+        tauxAutoproductionPct: totalConsommationKWh > 0 ? (totalAutoconsommeeNetKWh / totalConsommationKWh) * 100 : 0,
         economieRealiseeEur,
         economieReventeEur,
         productionPotentielleTotalKWh: sumField(days, "productionPotentielleKWh"),
-        productionConsommeeTotalKWh: totalAutoconsommeeKWh,
+        productionConsommeeTotalKWh: totalAutoconsommeeBrutKWh,
+        productionConsommeeNetKWh: totalAutoconsommeeNetKWh,
         consommationTotaleKWh: totalConsommationKWh,
 		productionSimuleeTotalKWh: totalProductionReelleKWh,
 		surplusInjecteKWh: totalSurplusKWh,
-      },
+		consommationTotaleReseauKWh: totalConsommationKWh-totalAutoconsommeeNetKWh,
+		energieChargeeBatterieTotalKWh: sumField(days, "chargeeDansBatterieKWh"),
+		energieDechargeeBatterieTotalKWh: sumField(days, "productionViaBatterieKWh"),
+	  },
     };
   }
 

@@ -379,10 +379,15 @@ window.TabFinancial = (function () {
       initialSocPct: 10,
     });
 
-    document.getElementById("stat-annual-consumed").textContent = result.indicators.productionConsommeeTotalKWh.toFixed(0);
+    document.getElementById("stat-annual-consumed-gross").textContent = result.indicators.productionConsommeeTotalKWh.toFixed(0);
+    document.getElementById("stat-annual-consumed-net").textContent = result.indicators.productionConsommeeNetKWh.toFixed(0);
     document.getElementById("stat-annual-savings").textContent = result.indicators.economieRealiseeEur.toFixed(0);
     document.getElementById("stat-annual-simulated").textContent = result.indicators.productionSimuleeTotalKWh.toFixed(0);
     document.getElementById("stat-annual-sold").textContent = result.indicators.surplusInjecteKWh.toFixed(0);
+    document.getElementById("stat-annual-network-consumed").textContent = result.indicators.consommationTotaleReseauKWh.toFixed(0);
+	
+    document.getElementById("stat-annual-charged").textContent = result.indicators.energieChargeeBatterieTotalKWh.toFixed(0);
+    document.getElementById("stat-annual-decharged").textContent = result.indicators.energieDechargeeBatterieTotalKWh.toFixed(0);
 
     renderConsumptionStackOnMonthlyChart(result.months);
     renderUtilizationChart(result.days, result.hasBattery);
@@ -445,9 +450,9 @@ window.TabFinancial = (function () {
       datasets.push({
         label: "Pic de charge batterie (%)",
         data: days.map((d) => d.picChargeBatteriePct),
-        borderColor: "#9b8cff",
+        //borderColor: "#9b8cff",
         //backgroundColor: "rgba(155,140,255,0.08)",
-		//borderColor: "#9b59b6",
+		borderColor: "#9b59b6",
 		backgroundColor: "rgba(155,89,182,0.08)",
         pointRadius: 0,
         borderWidth: 1,
