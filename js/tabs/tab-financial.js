@@ -307,12 +307,12 @@ window.TabFinancial = (function () {
   
       tr.innerHTML =
         `<td>${escapeHtml(line.label)}</td>` +
-        `<td class="text-right">${line.unitPrice.toLocaleString("fr-FR", {
+        `<td>${line.unitPrice.toLocaleString("fr-FR", {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2
         })} €</td>` +
-        `<td class="text-right">${line.quantity}</td>` +
-        `<td class="text-right">${lineTotal.toLocaleString("fr-FR", {
+        `<td>${line.quantity}</td>` +
+        `<td>${lineTotal.toLocaleString("fr-FR", {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2
         })} €</td>`;
@@ -323,7 +323,7 @@ window.TabFinancial = (function () {
     tfoot.innerHTML =
       `<tr class="stat__total">` +
       `<th colspan="3">Total</th>` +
-      `<th class="text-right">${total.toLocaleString("fr-FR", {
+      `<th>${total.toLocaleString("fr-FR", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       })} €</th>` +
