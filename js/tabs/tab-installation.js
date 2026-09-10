@@ -263,6 +263,7 @@ window.TabInstallation = (function () {
     bindNumberField("install-panel-degradation", profile.panels.degradationPerYear, (v) => setProfileField("panels", "degradationPerYear", v, false));
     bindNumberField("install-panel-orientation", profile.panels.orientation, (v) => setProfileField("panels", "orientation", v, false));
     bindNumberField("install-panel-tilt", profile.panels.tilt, (v) => setProfileField("panels", "tilt", v, false));
+    bindNumberField("install-inverter-count", profile.inverter.count, (v) => setProfileField("inverter", "count", v, true));
   }
 
   function bindNumberField(id, initialValue, onChange) {
@@ -381,7 +382,7 @@ window.TabInstallation = (function () {
     const panelPrice = panel ? panel.priceEur * profile.panels.count : 0;
 
     const inverter = (s.invertersDatabase || []).find((i) => i.id === profile.inverter.selectedModelId);
-    const inverterPrice = inverter ? inverter.priceEur : 0;
+    const inverterPrice = inverter ? inverter.priceEur * profile.inverter.count : 0;
 
     // Une seule batterie par installation, donc pas de multiplicateur.
     const battery = (s.batteriesDatabase || []).find((b) => b.id === profile.battery.selectedModelId);

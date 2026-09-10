@@ -438,11 +438,14 @@ table.data-table {
 
 .data-table select:focus { border-color: var(--accent-solar); }
 
-.stat__total {
+.stat__total th,
+.stat__total td {
   font-family: var(--font-data);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--accent-solar);
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 /* ============================================================
@@ -504,6 +507,11 @@ table.data-table {
 .chart-wrap {
   position: relative;
   height: 260px;
+}
+
+.chart-bilan-wrap {
+  position: relative;
+  height: 390px;
 }
 
 /* ============================================================

@@ -663,9 +663,15 @@
       </div>
 
       <h3 style="font-size:12px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; margin:16px 0 8px;">Onduleur</h3>
-      <div class="field" style="max-width:340px;">
-        <label for="install-inverter-select">Modèle</label>
-        <select id="install-inverter-select"></select>
+      <div class="grid-3">
+        <div class="field" style="max-width:340px;">
+          <label for="install-inverter-select">Modèle</label>
+          <select id="install-inverter-select"></select>
+        </div>
+        <div class="field">
+          <label for="install-inverter-count">Nombre</label>
+          <input type="number" id="install-inverter-count" min="1" step="1">
+        </div>
       </div>
 
       <h3 style="font-size:12px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; margin:16px 0 8px;">Batterie</h3>
@@ -918,7 +924,7 @@
       <p id="financial-consumption-report-hint" class="field__hint">Chargez un répertoire de consommation valide pour voir ce rapport.</p>
       <table class="data-table" id="financial-consumption-report-table" style="display:none;">
         <thead>
-          <tr><th></th><th>Consommation HP (kWh)</th><th>Consommation HC (kWh)</th><th>Consommation totale (kWh)</th><th>Coût HP (€)</th><th>Coût HC (€)</th><th>Coût total (€)</th></tr>
+          <tr><th>Mois</th><th>Consommation HP (kWh)</th><th>Consommation HC (kWh)</th><th>Consommation totale (kWh)</th><th>Coût HP (€)</th><th>Coût HC (€)</th><th>Coût total (€)</th></tr>
         </thead>
         <tbody id="financial-consumption-report-body"></tbody>
         <tfoot id="financial-consumption-report-foot"></tfoot>
@@ -994,15 +1000,33 @@
       <div class="card__header">
         <h2 class="card__title">Taux d'utilisation (365 jours)</h2>
       </div>
-      <p class="field__hint">Panneaux : production réelle nette rapportée à la production potentielle du jour. Batterie : pic de charge atteint dans la journée (% de la capacité).</p>
-      <div class="chart-wrap" style="margin-top:12px;">
+      <div class="chart-bilan-wrap" style="margin-top:12px;">
         <canvas id="chart-annual-utilization"></canvas>
       </div>
     </div>
 
-    <div class="tab-panel__placeholder">
-      <strong>À venir :</strong> export PDF du bilan.
-    </div>
+	<div class="card">
+	  <div class="card__header">
+		<h2 class="card__title">Détails du devis</h2>
+	  </div>
+
+	  <div class="table-wrap">
+		<table class="data-table">
+		  <thead>
+			<tr>
+			  <th>Libellé</th>
+			  <th class="text-right">Prix unitaire</th>
+			  <th class="text-right">Quantité</th>
+			  <th class="text-right">Total</th>
+			</tr>
+		  </thead>
+
+		  <tbody id="financial-quote-table-body"></tbody>
+		  <tfoot id="financial-quote-table-foot"></tfoot>
+		</table>
+	  </div>
+	</div>
+
   </section>
 
 </main>

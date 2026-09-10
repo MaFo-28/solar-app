@@ -114,6 +114,7 @@ window.TabFinancial = (function () {
     const annualProductionKwh = renderMonthlyProduction(loc, install.panels, ratedTotalWc, mask);
    // renderDegradationChart(install.panels, annualProductionKwh);
     renderAnnualBalance(install, inverter, battery, mask, ratedTotalWc, installCostTotal);
+    renderQuote(install);
   }
 
   // ------------------------------------------------------------------
@@ -128,7 +129,7 @@ window.TabFinancial = (function () {
     const panelPrice = panel ? panel.priceEur * install.panels.count : 0;
 
     const inverter = (s.invertersDatabase || []).find((i) => i.id === install.inverter.selectedModelId);
-    const inverterPrice = inverter ? inverter.priceEur : 0;
+    const inverterPrice = inverter ? inverter.priceEur * install.inverter.count : 0;
 
     // Une seule batterie par installation, donc pas de multiplicateur.
     const battery = (s.batteriesDatabase || []).find((b) => b.id === install.battery.selectedModelId);
@@ -231,6 +232,102 @@ window.TabFinancial = (function () {
     });
 
     return totalKwh;
+  }
+
+  // ------------------------------------------------------------------
+  // Présentation du devis
+  // ------------------------------------------------------------------
+  function renderQuote(install) {
+    const s = window.AppState.get();
+  
+    const tbody = document.getElementById("financial-quote-table-body");
+    const tfoot = document.getElementById("financial-quote-table-foot");
+  
+    if (!tbody || !tfoot) return;
+  
+    tbody.innerHTML = "";
+  
+    const panel = (s.panelsDatabase || []).find(
+      (p) => p.id === install.panels.selectedModelId
+    );
+  
+    const inverter = (s.invertersDatabase || []).find(
+      (i) => i.id === install.inverter.selectedModelId
+    );
+  
+    const battery = (s.batteriesDatabase || []).find(
+      (b) => b.id === install.battery.selectedModelId
+    );
+  
+    const lines = [];
+  
+    // Panneaux
+    if (panel && install.panels.count > 0) {
+      lines.push({
+        label: `${panel.brand} ${panel.model}`,
+        unitPrice: panel.priceEur,
+        quantity: install.panels.count
+      });
+    }
+  
+    // Onduleur
+    if (inverter && install.inverter.count > 0) {
+      lines.push({
+        label: `${inverter.brand} ${inverter.model}`,
+        unitPrice: inverter.priceEur,
+        quantity: install.inverter.count
+      });
+    }
+  
+    // Batterie
+    if (battery && install.battery.count > 0) {
+      lines.push({
+        label: `${battery.brand} ${battery.model}`,
+        unitPrice: battery.priceEur,
+        quantity: install.battery.count
+      });
+    }
+  
+    // Ajouts libres
+    (install.fixedCosts || []).forEach((line) => {
+      lines.push({
+        label: line.label,
+        unitPrice: line.priceEur || 0,
+        quantity: 1
+      });
+    });
+  
+    let total = 0;
+  
+    lines.forEach((line) => {
+      const lineTotal = line.unitPrice * line.quantity;
+      total += lineTotal;
+  
+      const tr = document.createElement("tr");
+  
+      tr.innerHTML =
+        `<td>${escapeHtml(line.label)}</td>` +
+        `<td class="text-right">${line.unitPrice.toLocaleString("fr-FR", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        })} €</td>` +
+        `<td class="text-right">${line.quantity}</td>` +
+        `<td class="text-right">${lineTotal.toLocaleString("fr-FR", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        })} €</td>`;
+  
+      tbody.appendChild(tr);
+    });
+  
+    tfoot.innerHTML =
+      `<tr class="stat__total">` +
+      `<th colspan="3">Total</th>` +
+      `<th class="text-right">${total.toLocaleString("fr-FR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })} €</th>` +
+      `</tr>`;
   }
 
   // ------------------------------------------------------------------
@@ -754,10 +851,10 @@ window.TabFinancial = (function () {
   function consumptionReportRowHtml(label, t, isTotal) {
     const totalKwh = t.hpKwh + t.hcKwh;
     const totalCost = t.hpCost + t.hcCost;
-    const style = isTotal ? ' style="font-weight:600;"' : "";
-	const className = isTotal ? ' class="stat__total "' : "";
+    //const style = isTotal ? ' style="font-weight:600;"' : "";
+	const className = isTotal ? ' class="stat__total"' : "";
     return (
-      "<tr" + className + style + "><td>" + escapeHtml(label) + "</td>" +
+      "<tr" + className + "><td>" + escapeHtml(label) + "</td>" +
       "<td>" + t.hpKwh.toFixed(2) + "</td>" +
       "<td>" + t.hcKwh.toFixed(2) + "</td>" +
       "<td>" + totalKwh.toFixed(2) + "</td>" +
