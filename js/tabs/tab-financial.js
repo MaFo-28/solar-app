@@ -280,11 +280,12 @@ window.TabFinancial = (function () {
     }
   
     // Batterie
-    if (battery && install.battery.count > 0) {
+	// Une seule batterie par installation, donc pas de multiplicateur.
+    if (battery) {
       lines.push({
         label: `${battery.brand} ${battery.model}`,
         unitPrice: battery.priceEur,
-        quantity: install.battery.count
+        quantity: 1
       });
     }
   

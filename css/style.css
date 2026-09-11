@@ -511,7 +511,59 @@ table.data-table {
 
 .chart-bilan-wrap {
   position: relative;
-  height: 390px;
+  height: 360px;
+}
+
+/* ============================================================
+   Gestion de l'impression
+   ============================================================ */
+@media print {
+  @page {
+    size: A3;
+    margin: margin: 15mm
+  }
+}
+@media print {
+  .app-sticky-wrap {
+    display: none !important;
+  }
+}
+@media print {
+  .chart-wrap,
+  .chart-bilan-wrap {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+@media print {
+  .chart-wrap canvas,
+  .chart-bilan-wrap canvas {
+    max-width: 100% !important;
+  }
+}
+@media print {
+  .card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+@media print {
+  #financial-consumption-report-table {
+    width: 100% !important;
+    max-width: 100% !important;
+    table-layout: fixed;
+  }
+}
+@media print {
+  #tab-financial {
+    width: 100%;
+    max-width: none;
+  }
+  #tab-financial .card {
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
+  }
 }
 
 /* ============================================================
