@@ -260,7 +260,7 @@ window.TabSimulation = (function () {
         data: resultEte.points.map((p) => ({ x: p.hour, y: p.powerW })),
         borderColor: "#f5a623",
         backgroundColor: "rgba(245,166,35,0.24)",
-        fill: true,
+        fill: false,
         tension: 0.2,
         pointRadius: 0,
       },
@@ -269,7 +269,7 @@ window.TabSimulation = (function () {
         data: resultHiver.points.map((p) => ({ x: p.hour, y: p.powerW })),
         borderColor: "#3ec9a7",
         backgroundColor: "rgba(62,201,167,0.24)",
-        fill: true,
+        fill: false,
         tension: 0.2,
         pointRadius: 0,
       },
@@ -336,9 +336,9 @@ window.TabSimulation = (function () {
   // Résultats : 3 graphiques (été/équinoxe/hiver) + coûts
   // ------------------------------------------------------------------
   const SEASONS = [
-    { key: "ete", label: "Été (21 juin)" },
+    { key: "ete", label: "Solciste d'été" },
     { key: "equinoxe", label: "Équinoxe" },
-    { key: "hiver", label: "Hiver (21 décembre)" },
+    { key: "hiver", label: "Solciste d'hiver" },
   ];
 
   function runSimulationForSeason(ctx, seasonKey) {
@@ -520,7 +520,7 @@ window.TabSimulation = (function () {
             data: result.points.map((p) => ({ x: p.hour, y: p.productionW })),
             borderColor: "#f5a623",
             backgroundColor: "rgba(245,166,35,0.24)",
-            fill: true,
+            fill: false,
             pointRadius: 0,
             tension: 0.15,
           },
