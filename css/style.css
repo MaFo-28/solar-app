@@ -209,7 +209,7 @@ body {
 /* Carte mise à l'écart : synthèse chiffrée qu'on doit repérer d'un
    coup d'œil au milieu des sections de saisie (prix de l'installation) */
 .card--price {
-  background: var(--panel-raised);
+  background: var(--panel);
   border-color: var(--accent-solar-dim);
   border-left: 3px solid var(--accent-solar);
 }

@@ -231,7 +231,7 @@ window.TabLocation = (function () {
         label: "Solstice d'été (21 juin)",
         data: curveEte.map((p) => ({ x: p.hour, y: p.elevation })),
         borderColor: "#f5a623",
-        backgroundColor: "rgba(245,166,35,0.12)",
+        backgroundColor: "rgba(245,166,35,0.24)",
         fill: true,
         tension: 0.25,
         pointRadius: 0,
@@ -240,7 +240,7 @@ window.TabLocation = (function () {
         label: "Solstice d'hiver (21 décembre)",
         data: curveHiver.map((p) => ({ x: p.hour, y: p.elevation })),
         borderColor: "#3ec9a7",
-        backgroundColor: "rgba(62,201,167,0.12)",
+        backgroundColor: "rgba(62,201,167,0.24)",
         fill: true,
         tension: 0.25,
         pointRadius: 0,
@@ -249,7 +249,7 @@ window.TabLocation = (function () {
         label: "Équinoxe",
         data: curveEquinoxe.map((p) => ({ x: p.hour, y: p.elevation })),
         borderColor: "#9b8cff",
-        backgroundColor: "rgba(155,140,255,0.08)",
+        backgroundColor: "rgba(155,89,182,0.24)",
         fill: false,
         borderDash: [4, 3],
         tension: 0.25,
@@ -361,7 +361,7 @@ window.TabLocation = (function () {
           },
         },
         plugins: {
-          legend: { labels: { color: "#e9e7e0" } },
+          legend: { labels: { color: "#676b74" } },
         },
       },
     });
@@ -391,7 +391,7 @@ window.TabLocation = (function () {
         label: "Solstice d'été",
         data: seriesEte,
         borderColor: "#f5a623",
-        backgroundColor: "transparent",
+        backgroundColor: "rgba(245,166,35,0.24)",
         pointRadius: 0,
         tension: 0.15,
       },
@@ -399,7 +399,7 @@ window.TabLocation = (function () {
         label: "Solstice d'hiver",
         data: seriesHiver,
         borderColor: "#3ec9a7",
-        backgroundColor: "transparent",
+        backgroundColor: "rgba(62,201,167,0.24",
         pointRadius: 0,
         tension: 0.15,
       },
@@ -407,7 +407,7 @@ window.TabLocation = (function () {
         label: "Équinoxe",
         data: seriesEquinoxe,
         borderColor: "#9b8cff",
-        backgroundColor: "transparent",
+        backgroundColor: "rgba(155,89,182,0.24)",
         borderDash: [4, 3],
         pointRadius: 0,
         tension: 0.15,
@@ -469,7 +469,7 @@ window.TabLocation = (function () {
           },
         },
         plugins: {
-          legend: { labels: { color: "#e9e7e0" } },
+          legend: { labels: { color: "#676b74" } },
           tooltip: {
             callbacks: {
               label: (item) =>

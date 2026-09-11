@@ -226,7 +226,7 @@ window.TabFinancial = (function () {
           },
         },
         plugins: {
-          legend: { display: false },
+          legend: { labels: { color: "#676b74" } },
         },
       },
     });
@@ -356,7 +356,7 @@ window.TabFinancial = (function () {
             label: hasAnnualBaseline ? "Production annuelle estimée (kWh)" : "Rendement restant (%)",
             data: data,
             borderColor: "#e0575b",
-            backgroundColor: "rgba(224,87,91,0.12)",
+            backgroundColor: "rgba(224,87,91,0.24)",
             fill: true,
             tension: 0.15,
             pointRadius: 0,
@@ -385,7 +385,7 @@ window.TabFinancial = (function () {
           },
         },
         plugins: {
-          legend: { display: false },
+          legend: { labels: { color: "#676b74" } },
           tooltip: {
             callbacks: {
               label: (item) =>
@@ -512,12 +512,12 @@ window.TabFinancial = (function () {
       {
         label: "Autoconsommation batterie",
         data: months.map((m) => m.productionViaBatterieKWh),
-        backgroundColor: "rgba(155,140,255,0.65)",
+		backgroundColor: "rgba(155,89,182,0.65)",
         stack: "conso",
         borderRadius: 3,
       },
       {
-        label: "Réseau",
+        label: "Consommation réseau",
         data: months.map((m) => m.consommationReseauKWh),
         backgroundColor: "rgba(224,87,91,0.65)",
         stack: "conso",
@@ -538,7 +538,7 @@ window.TabFinancial = (function () {
             : 0
         ),
         borderColor: "#f5a623",
-        backgroundColor: "rgba(245,166,35,0.08)",
+        backgroundColor: "rgba(245,166,35,0.24)",
         pointRadius: 0,
         borderWidth: 1,
         tension: 0.1,
@@ -548,10 +548,8 @@ window.TabFinancial = (function () {
       datasets.push({
         label: "Pic de charge batterie (%)",
         data: days.map((d) => d.picChargeBatteriePct),
-        //borderColor: "#9b8cff",
-        //backgroundColor: "rgba(155,140,255,0.08)",
 		borderColor: "#9b59b6",
-		backgroundColor: "rgba(155,89,182,0.08)",
+		backgroundColor: "rgba(155,89,182,0.24)",
         pointRadius: 0,
         borderWidth: 1,
         tension: 0.1,
@@ -562,7 +560,7 @@ window.TabFinancial = (function () {
 		label: "Décharge batterie (%)",
 		data: days.map((d) => d.picDechargeBatteriePct),
 		borderColor: "#5bc0eb",
-		backgroundColor: "rgba(91,192,235,0.08)",
+		backgroundColor: "rgba(91,192,235,0.24)",
 		pointRadius: 0,
 		borderWidth: 1,
 		tension: 0.1,
@@ -571,10 +569,10 @@ window.TabFinancial = (function () {
 
 	if (hasBattery) {
 	  datasets.push({
-		label: "Utilisation batterie (%)",
+		label: "Moyenne utilisation batterie (%)",
 		data: days.map((d) => d.moyenneUtilisationBatteriePct),
 		borderColor: "#5cb85c",
-		backgroundColor: "rgba(92,184,92,0.08)",
+		backgroundColor: "rgba(92,184,92,0.24)",
 		pointRadius: 0,
 		borderWidth: 1,
 		tension: 0.1,
@@ -640,7 +638,7 @@ window.TabFinancial = (function () {
           },
         },
         plugins: {
-          legend: { labels: { color: "#e9e7e0" } },
+          legend: { labels: { color: "#676b74" } },
         },
       },
     });
