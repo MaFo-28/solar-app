@@ -14,6 +14,8 @@
   --text-dim: #9a9ea8;
   --text-faint: #676b74;
   --text-red: #e0575b;
+  --text-hc: #3ec9a7;
+  --text-hp: #9b59b6;
 
   --accent-solar: #f5a623;
   --accent-solar-dim: #7a5a1f;
@@ -367,6 +369,20 @@ body {
   color: var(--text-red);
 }
 
+.stat__value_hc {
+  font-family: var(--font-data);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-hc);
+}
+
+.stat__value_hp {
+  font-family: var(--font-data);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-hp);
+}
+
 .stat__value--battery { color: var(--accent-battery); }
 .stat__value--equinox { color: var(--accent-equinox); }
 
@@ -506,12 +522,12 @@ table.data-table {
    ============================================================ */
 .chart-wrap {
   position: relative;
-  height: 260px;
+  height: 390px;
 }
 
 .chart-bilan-wrap {
   position: relative;
-  height: 360px;
+  height: 390px;
 }
 
 /* ============================================================

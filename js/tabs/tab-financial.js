@@ -27,6 +27,7 @@ window.TabFinancial = (function () {
   let annualUtilizationChart = null;
   let annualEnergyChart = null;
   let consumptionDayCache = null; // { "MM-DD": [96 valeurs W] } une fois un répertoire validé, sinon null
+  let monthlyConsumptionChart = null;
 
   function init() {
     renderInstallSelect();
@@ -149,7 +150,7 @@ window.TabFinancial = (function () {
   }
 
   // ------------------------------------------------------------------
-  // Production mensuelle réaliste (PVGIS)
+  // Production mensuelle (PVGIS et simulée)
   // ------------------------------------------------------------------
   function renderMonthlyProduction(loc, panelsConfig, ratedTotalWc, mask) {
     const hint = document.getElementById("panel-monthly-hint");
@@ -182,7 +183,8 @@ window.TabFinancial = (function () {
     chartWrap.style.display = "block";
     totalWrap.style.display = "flex";
 
-    const monthLabels = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"];
+	const monthLabels = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+
     const totalKwh = months.reduce((sum, m) => sum + m.productionKwh, 0);
     document.getElementById("stat-annual-production").textContent = totalKwh.toFixed(0);
 
@@ -201,14 +203,13 @@ window.TabFinancial = (function () {
 
     const ctx2d = document.getElementById("chart-panel-monthly").getContext("2d");
     if (monthlyChart) monthlyChart.destroy();
-
     monthlyChart = new Chart(ctx2d, {
       type: "bar",
       data: {
         labels: monthLabels,
         datasets: [
           {
-            label: "Production estimée (kWh/mois)",
+            label: "Production estimée (PVGIS)",
             data: months.map((m) => m.productionKwh),
             backgroundColor: "rgba(245,166,35,0.55)",
             borderRadius: 3,
@@ -412,6 +413,7 @@ window.TabFinancial = (function () {
     const totalWrap = document.getElementById("financial-annual-total-wrap");
     const utilCard = document.getElementById("financial-utilization-card");
     const indicatorsCard = document.getElementById("financial-indicators-card");
+	const consumptionWrap = document.getElementById("consumption-monthly-chart-wrap");
 
     const s = window.AppState.get();
     const loc = s.location;
@@ -421,6 +423,8 @@ window.TabFinancial = (function () {
       hint.style.display = "block";
       hint.textContent = message;
       totalWrap.style.display = "none";
+      consumptionWrap.style.display = "none";
+
       utilCard.style.display = "none";
       indicatorsCard.style.display = "none";
       if (monthlyChart) {
@@ -455,6 +459,8 @@ window.TabFinancial = (function () {
 
     hint.style.display = "none";
     totalWrap.style.display = "flex";
+    consumptionWrap.style.display = "flex";
+
     utilCard.style.display = "block";
     indicatorsCard.style.display = "block";
 
@@ -478,32 +484,55 @@ window.TabFinancial = (function () {
       initialSocPct: 10,
     });
 
+
+    const tariffs = window.AppState.get().location.tariffs;
+    const months = computeConsumptionReport(consumptionDayCache, tariffs);
+    const grand = months.reduce(
+      (acc, t) => ({
+        hpKwh: acc.hpKwh + t.hpKwh,
+        hcKwh: acc.hcKwh + t.hcKwh,
+        hpCost: acc.hpCost + t.hpCost,
+        hcCost: acc.hcCost + t.hcCost,
+      }),
+      { hpKwh: 0, hcKwh: 0, hpCost: 0, hcCost: 0 }
+    );
+	result.indicators.economieRealiseeEur = (grand.hpCost + grand.hcCost) - (result.indicators.coutTotalHp + result.indicators.coutTotalHc);
+
     document.getElementById("stat-annual-consumed-gross").textContent = result.indicators.productionConsommeeTotalKWh.toFixed(0);
     document.getElementById("stat-annual-consumed-net").textContent = result.indicators.productionConsommeeNetKWh.toFixed(0);
     document.getElementById("stat-annual-savings").textContent = result.indicators.economieRealiseeEur.toFixed(0);
     document.getElementById("stat-annual-simulated").textContent = result.indicators.productionSimuleeTotalKWh.toFixed(0);
     document.getElementById("stat-annual-sold").textContent = result.indicators.surplusInjecteKWh.toFixed(0);
     document.getElementById("stat-annual-network-consumed").textContent = result.indicators.consommationTotaleReseauKWh.toFixed(0);
-	
     document.getElementById("stat-annual-charged").textContent = result.indicators.energieChargeeBatterieTotalKWh.toFixed(0);
     document.getElementById("stat-annual-decharged").textContent = result.indicators.energieDechargeeBatterieTotalKWh.toFixed(0);
 
+    document.getElementById("stat-annual-total-consumed-HP").textContent = result.indicators.consommationTotaleHpKWh.toFixed(0);
+    document.getElementById("stat-annual-total-consumed-HC").textContent = result.indicators.consommationTotaleHcKWh.toFixed(0);
+
     renderConsumptionStackOnMonthlyChart(result.months);
+	renderConsumptionStackOnmonthlyConsumptionChart(result.months);
     renderIndicators(result.indicators, installCostTotal);
     renderUtilizationChart(result.days, result.hasBattery);
 	renderEnergyChart(result.days, result.hasBattery);
   }
 
   /**
-   * Ajoute la barre 2 (empilement autoconsommation directe / batterie /
-   * réseau) au graphique déjà tracé par renderMonthlyProduction, sans
-   * toucher à la barre 1 (production mensuelle réaliste, dataset 0).
+   * Ajoute la barre 2 (empilement autoconsommation directe / batterie)
+   * au graphique déjà tracé par renderMonthlyProduction, sans toucher
+   * à la barre 1 (production mensuelle réaliste, dataset 0).
    */
   function renderConsumptionStackOnMonthlyChart(months) {
     if (!monthlyChart) return;
     monthlyChart.data.datasets = monthlyChart.data.datasets.slice(0, 1);
     monthlyChart.data.datasets[0].stack = "prod";
     monthlyChart.data.datasets.push(
+      {
+        label: "Production simulée",
+        data: months.map((m) => m.productionReelleKWh),
+		backgroundColor: "rgba(255,215,0,0.65)",
+        borderRadius: 3,
+      },
       {
         label: "Autoconsommation directe",
         data: months.map((m) => m.productionAutoconsommeeDirecteKWh),
@@ -512,19 +541,19 @@ window.TabFinancial = (function () {
         borderRadius: 3,
       },
       {
-        label: "Autoconsommation batterie",
-        data: months.map((m) => m.productionViaBatterieKWh),
+        label: "Autoconsommation recharge batterie",
+        data: months.map((m) => m.chargeeDansBatterieKWh),
 		backgroundColor: "rgba(155,89,182,0.65)",
         stack: "conso",
         borderRadius: 3,
       },
       {
-        label: "Consommation réseau",
-        data: months.map((m) => m.consommationReseauKWh),
+        label: "Injection réseau",
+        data: months.map((m) => m.productionInjecteeKWh),
         backgroundColor: "rgba(224,87,91,0.65)",
         stack: "conso",
         borderRadius: 3,
-      }
+      },
     );
     monthlyChart.options.plugins.legend.display = true;
     monthlyChart.update();
@@ -535,7 +564,6 @@ window.TabFinancial = (function () {
     document.getElementById("stat-taux-autoproduction").textContent = indicators.tauxAutoproductionPct.toFixed(0);
     document.getElementById("stat-indicator-savings").textContent = indicators.economieRealiseeEur.toFixed(0);
     document.getElementById("stat-indicator-resale").textContent = indicators.economieReventeEur.toFixed(0);
-//    document.getElementById("stat-indicator-cost").textContent = installCostTotal.toFixed(0);
     const roi = installCostTotal > 0 && indicators.economieRealiseeEur > 0
       ? installCostTotal / indicators.economieRealiseeEur
       : null;
@@ -620,8 +648,7 @@ window.TabFinancial = (function () {
 				color: "#9a9ea8",
 				callback: function(value) {
 				  const mois = [
-					"Jan", "Fév", "Mar", "Avr", "Mai", "Juin",
-					"Juil", "Août", "Sep", "Oct", "Nov", "Déc"
+					"Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
 				  ];
 
 				  const jour = Number(value) + 1;
@@ -670,15 +697,6 @@ window.TabFinancial = (function () {
         tension: 0.1,
       },
     ];
-/*	datasets.push({
-	  label: "Consommation totale",
-	  data: days.map((d) => d.consommationTotaleKWh),
-		borderColor: "#9b59b6",
-		backgroundColor: "rgba(155,89,182,0.24)",
-	  pointRadius: 0,
-	  borderWidth: 1,
-	  tension: 0.1,
-	});*/
 	datasets.push({
 	  label: "Consommation solaire",
 	  data: days.map((d) => d.productionAutoconsommeeDirecteKWh + d.chargeeDansBatterieKWh),
@@ -745,8 +763,7 @@ window.TabFinancial = (function () {
 				color: "#9a9ea8",
 				callback: function(value) {
 				  const mois = [
-					"Jan", "Fév", "Mar", "Avr", "Mai", "Juin",
-					"Juil", "Août", "Sep", "Oct", "Nov", "Déc"
+				    "Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
 				  ];
 
 				  const jour = Number(value) + 1;
@@ -1016,9 +1033,78 @@ window.TabFinancial = (function () {
     document.getElementById("financial-consumption-report-foot").innerHTML =
       consumptionReportRowHtml("Total annuel", grand, true);
 
+    const ctx2d = document.getElementById("chart-consumption-monthly").getContext("2d");
+    if (monthlyConsumptionChart) monthlyConsumptionChart.destroy();
+    monthlyConsumptionChart = new Chart(ctx2d, {
+      type: "bar",
+      data: {
+        labels: U.MONTH_NAMES,
+        datasets: [
+          {
+            label: "Consommation initiale HC",
+            data: months.map((m) => m.hcKwh),
+            backgroundColor: "rgba(245,166,35,0.65)",
+		    stack: "consoInitiale",
+		    borderRadius: 3,
+          },
+          {
+            label: "Consommation initiale HP",
+            data: months.map((m) => m.hpKwh),
+            backgroundColor: "rgba(224,87,91,0.65)",
+		    stack: "consoInitiale",
+		    borderRadius: 3,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { ticks: { color: "#9a9ea8" }, grid: { display: false } },
+          y: {
+            title: { display: true, text: "kWh / mois", color: "#9a9ea8" },
+            ticks: { color: "#9a9ea8" },
+            grid: { color: "#23272f" },
+          },
+        },
+        plugins: {
+          legend: { labels: { color: "#676b74" } },
+        },
+      },
+    });
+
     hint.style.display = "none";
     table.style.display = "";
   }
+
+  /**
+   * Ajoute la barre 2 (empilement conso HP / conso HC)
+   * au graphique déjà tracé par renderConsumptionReport, sans toucher
+   * à la barre 1 (consommation initiale HP/HC, dataset 0).
+   */
+  function renderConsumptionStackOnmonthlyConsumptionChart(months) {
+    if (!monthlyConsumptionChart) return;
+    monthlyConsumptionChart.data.datasets = monthlyConsumptionChart.data.datasets.slice(0, 2);
+    monthlyConsumptionChart.data.datasets.push(
+      {
+        label: "Consommation HC",
+        data: months.map((m) => m.consommationReseauHcKwh),
+        backgroundColor: "rgba(62,201,167,0.65)",
+        stack: "consoAvecSolaire",
+        borderRadius: 3,
+      },
+      {
+        label: "Consommation HP",
+        data: months.map((m) => m.consommationReseauHpKwh),
+		backgroundColor: "rgba(155,89,182,0.65)",
+        stack: "consoAvecSolaire",
+        borderRadius: 3,
+      },
+    );
+    monthlyConsumptionChart.options.plugins.legend.display = true;
+    monthlyConsumptionChart.update();
+  }
+
 
   function escapeHtml(str) {
     return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");

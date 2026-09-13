@@ -173,10 +173,14 @@ window.AnnualSimulation = (function () {
 		let sumSocPct = 0;
 		let averageSocPct = 0;
 		let numPt =0;
+		
+		let consommationReseauHpKwh = 0;
+		let consommationReseauHcKwh = 0;
+
         result.points.forEach((pt) => {
           const autoconsommeeW = pt.solarToHouseW + pt.batteryDischargeW;
+          const tariff = U.tariffForHour(p.tariffs, pt.hour);
           if (autoconsommeeW > 0) {
-            const tariff = U.tariffForHour(p.tariffs, pt.hour);
             economieRealiseeEur += (autoconsommeeW / 1000) * 0.25 * (tariff ? tariff.pricePerKwh : 0);
           }
           directKwh += (pt.solarToHouseW / 1000) * 0.25;
@@ -187,11 +191,20 @@ window.AnnualSimulation = (function () {
           if (pt.socPct < troughSocPct) troughSocPct = pt.socPct;
 		  numPt +=1;
 		  sumSocPct += pt.socPct;
-		  averageSocPct = sumSocPct/numPt;	
+		  averageSocPct = sumSocPct/numPt;
+		  
+		  const tariffCategory = U.classifyTariff(tariff);
+		  const gridImportKwh = (pt.gridImportW / 1000) * 0.25;
+
+		  if (tariffCategory === "hp") {
+			consommationReseauHpKwh += gridImportKwh;
+		  } else if (tariffCategory === "hc") {
+			consommationReseauHcKwh += gridImportKwh;
+		  }
         });
 
         const consommationTotaleKWh = result.totalConsumptionKwh;
-        const consommationReseauKWh = Math.max(0, consommationTotaleKWh - directKwh - viaBatteryKwh);
+        const consommationReseauKWh = consommationReseauHpKwh + consommationReseauHcKwh;
 
         socPct = hasBattery && result.points.length > 0 ? result.points[result.points.length - 1].socPct : socPct;
 
@@ -204,11 +217,15 @@ window.AnnualSimulation = (function () {
           productionViaBatterieKWh: viaBatteryKwh,
           chargeeDansBatterieKWh: hasBattery ? chargeeDansBatterieKwh : 0,
           surplusVenduKWh: surplusKwh,
+		  consommationReseauHpKwh,
+		  consommationReseauHcKwh,
           consommationReseauKWh,
           consommationTotaleKWh,
           picChargeBatteriePct: hasBattery ? peakSocPct : null,
           picDechargeBatteriePct: hasBattery ? troughSocPct : null,
 		  moyenneUtilisationBatteriePct: hasBattery ? averageSocPct : null,
+		  coutHc: result.costHc,
+		  coutHp: result.costHp,
         });
       }
     }
@@ -218,11 +235,15 @@ window.AnnualSimulation = (function () {
       const dayList = days.filter((d) => d.month === m);
       months.push({
         month: m,
-        productionPotentielleKWh: sumField(dayList, "productionPotentielleKWh"),
+        productionReelleKWh: sumField(dayList, "productionReelleKWh"),
         productionAutoconsommeeDirecteKWh: sumField(dayList, "productionAutoconsommeeDirecteKWh"),
         productionViaBatterieKWh: sumField(dayList, "productionViaBatterieKWh"),
+        chargeeDansBatterieKWh: sumField(dayList, "chargeeDansBatterieKWh"),
         consommationReseauKWh: sumField(dayList, "consommationReseauKWh"),
+		consommationReseauHpKwh: sumField(dayList, "consommationReseauHpKwh"),
+		consommationReseauHcKwh: sumField(dayList, "consommationReseauHcKwh"),
         consommationTotaleKWh: sumField(dayList, "consommationTotaleKWh"),
+		productionInjecteeKWh: sumField(dayList, "surplusVenduKWh"),
       });
     }
 
@@ -230,6 +251,9 @@ window.AnnualSimulation = (function () {
     const totalAutoconsommeeBrutKWh = sumField(days, "productionAutoconsommeeDirecteKWh") + sumField(days, "chargeeDansBatterieKWh");
     const totalAutoconsommeeNetKWh = sumField(days, "productionAutoconsommeeDirecteKWh") + sumField(days, "productionViaBatterieKWh");
     const totalConsommationKWh = sumField(days, "consommationTotaleKWh");
+    const totalConsommationHpKWh = sumField(days, "consommationReseauHpKwh");
+    const totalConsommationHcKWh = sumField(days, "consommationReseauHcKwh");
+    const totalConsommationHpHcKWh = totalConsommationHpKWh + totalConsommationHcKWh;
     const totalSurplusKWh = sumField(days, "surplusVenduKWh");
     const economieReventeEur = p.sellMode === "sell" ? totalSurplusKWh * p.sellTariffPerKwh : 0;
 
@@ -246,11 +270,15 @@ window.AnnualSimulation = (function () {
         productionConsommeeTotalKWh: totalAutoconsommeeBrutKWh,
         productionConsommeeNetKWh: totalAutoconsommeeNetKWh,
         consommationTotaleKWh: totalConsommationKWh,
+		consommationTotaleHpKWh:totalConsommationHpKWh,
+		consommationTotaleHcKWh:totalConsommationHcKWh,
 		productionSimuleeTotalKWh: totalProductionReelleKWh,
 		surplusInjecteKWh: totalSurplusKWh,
-		consommationTotaleReseauKWh: totalConsommationKWh-totalAutoconsommeeNetKWh,
+		consommationTotaleReseauKWh: totalConsommationHpHcKWh,//totalConsommationKWh-totalAutoconsommeeNetKWh,
 		energieChargeeBatterieTotalKWh: sumField(days, "chargeeDansBatterieKWh"),
 		energieDechargeeBatterieTotalKWh: sumField(days, "productionViaBatterieKWh"),
+		coutTotalHc: sumField(days, "coutHc"),
+		coutTotalHp: sumField(days, "coutHp"),
 	  },
     };
   }

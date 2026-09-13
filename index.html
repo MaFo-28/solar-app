@@ -939,6 +939,11 @@
       <div class="chart-wrap" id="panel-monthly-chart-wrap" style="margin-top:12px; display:none;">
         <canvas id="chart-panel-monthly"></canvas>
       </div>
+	  
+      <div class="chart-wrap" id="consumption-monthly-chart-wrap" style="margin-top:12px; display:none;">
+        <canvas id="chart-consumption-monthly"></canvas>
+      </div>
+	  	  
       <div class="stat-row" id="panel-monthly-total-wrap" style="margin-top:14px; display:none;">
         <div class="stat">
           <span class="stat__label">Production estimée</span>
@@ -991,6 +996,16 @@
 	      <div class="stat">
 	        <span class="stat__label">Production injectée ou perdue</span>
 	        <span class="stat__value_red"><span id="stat-annual-sold">—</span><span class="stat__unit">kWh/an</span></span>
+	      </div>
+	    </div>
+	    <div class="stat-stack">
+	      <div class="stat">
+	        <span class="stat__label">Consommation totale HP</span>
+	        <span class="stat__value_hp"><span id="stat-annual-total-consumed-HP">—</span><span class="stat__unit">kWh/an</span></span>
+	      </div>
+	      <div class="stat">
+	        <span class="stat__label">Consommation totale HC</span>
+	        <span class="stat__value_hc"><span id="stat-annual-total-consumed-HC">—</span><span class="stat__unit">kWh/an</span></span>
 	      </div>
 	    </div>
 	  </div>
