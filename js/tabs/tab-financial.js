@@ -25,6 +25,7 @@ window.TabFinancial = (function () {
   let monthlyChart = null;
   let degradationChart = null;
   let annualUtilizationChart = null;
+  let annualEnergyChart = null;
   let consumptionDayCache = null; // { "MM-DD": [96 valeurs W] } une fois un répertoire validé, sinon null
 
   function init() {
@@ -488,8 +489,9 @@ window.TabFinancial = (function () {
     document.getElementById("stat-annual-decharged").textContent = result.indicators.energieDechargeeBatterieTotalKWh.toFixed(0);
 
     renderConsumptionStackOnMonthlyChart(result.months);
-    renderUtilizationChart(result.days, result.hasBattery);
     renderIndicators(result.indicators, installCostTotal);
+    renderUtilizationChart(result.days, result.hasBattery);
+	renderEnergyChart(result.days, result.hasBattery);
   }
 
   /**
@@ -528,10 +530,22 @@ window.TabFinancial = (function () {
     monthlyChart.update();
   }
 
+  function renderIndicators(indicators, installCostTotal) {
+    document.getElementById("stat-taux-autoconsommation").textContent = indicators.tauxAutoconsommationPct.toFixed(0);
+    document.getElementById("stat-taux-autoproduction").textContent = indicators.tauxAutoproductionPct.toFixed(0);
+    document.getElementById("stat-indicator-savings").textContent = indicators.economieRealiseeEur.toFixed(0);
+    document.getElementById("stat-indicator-resale").textContent = indicators.economieReventeEur.toFixed(0);
+//    document.getElementById("stat-indicator-cost").textContent = installCostTotal.toFixed(0);
+    const roi = installCostTotal > 0 && indicators.economieRealiseeEur > 0
+      ? installCostTotal / indicators.economieRealiseeEur
+      : null;
+    document.getElementById("stat-indicator-roi").textContent = roi !== null ? roi.toFixed(1) : "—";
+  }
+
   function renderUtilizationChart(days, hasBattery) {
     const datasets = [
       {
-        label: "Taux d'utilisation panneaux (%)",
+        label: "Taux d'utilisation panneaux",
         data: days.map((d) =>
           d.productionReelleKWh > 0
             ? ((d.productionAutoconsommeeDirecteKWh + d.chargeeDansBatterieKWh) / d.productionReelleKWh) * 100
@@ -546,7 +560,7 @@ window.TabFinancial = (function () {
     ];
     if (hasBattery) {
       datasets.push({
-        label: "Pic de charge batterie (%)",
+        label: "Pic de charge batterie",
         data: days.map((d) => d.picChargeBatteriePct),
 		borderColor: "#9b59b6",
 		backgroundColor: "rgba(155,89,182,0.24)",
@@ -557,7 +571,7 @@ window.TabFinancial = (function () {
     }
 	if (hasBattery) {
 	  datasets.push({
-		label: "Décharge batterie (%)",
+		label: "Décharge batterie",
 		data: days.map((d) => d.picDechargeBatteriePct),
 		borderColor: "#5bc0eb",
 		backgroundColor: "rgba(91,192,235,0.24)",
@@ -569,7 +583,7 @@ window.TabFinancial = (function () {
 
 	if (hasBattery) {
 	  datasets.push({
-		label: "Moyenne utilisation batterie (%)",
+		label: "Moyenne utilisation batterie",
 		data: days.map((d) => d.moyenneUtilisationBatteriePct),
 		borderColor: "#5cb85c",
 		backgroundColor: "rgba(92,184,92,0.24)",
@@ -644,16 +658,127 @@ window.TabFinancial = (function () {
     });
   }
 
-  function renderIndicators(indicators, installCostTotal) {
-    document.getElementById("stat-taux-autoconsommation").textContent = indicators.tauxAutoconsommationPct.toFixed(0);
-    document.getElementById("stat-taux-autoproduction").textContent = indicators.tauxAutoproductionPct.toFixed(0);
-    document.getElementById("stat-indicator-savings").textContent = indicators.economieRealiseeEur.toFixed(0);
-    document.getElementById("stat-indicator-resale").textContent = indicators.economieReventeEur.toFixed(0);
-//    document.getElementById("stat-indicator-cost").textContent = installCostTotal.toFixed(0);
-    const roi = installCostTotal > 0 && indicators.economieRealiseeEur > 0
-      ? installCostTotal / indicators.economieRealiseeEur
-      : null;
-    document.getElementById("stat-indicator-roi").textContent = roi !== null ? roi.toFixed(1) : "—";
+  function renderEnergyChart(days, hasBattery) {
+    const datasets = [
+      {
+        label: "Production solaire",
+        data: days.map((d) => d.productionReelleKWh),
+        borderColor: "#f5a623",
+        backgroundColor: "rgba(245,166,35,0.24)",
+        pointRadius: 0,
+        borderWidth: 1,
+        tension: 0.1,
+      },
+    ];
+/*	datasets.push({
+	  label: "Consommation totale",
+	  data: days.map((d) => d.consommationTotaleKWh),
+		borderColor: "#9b59b6",
+		backgroundColor: "rgba(155,89,182,0.24)",
+	  pointRadius: 0,
+	  borderWidth: 1,
+	  tension: 0.1,
+	});*/
+	datasets.push({
+	  label: "Consommation solaire",
+	  data: days.map((d) => d.productionAutoconsommeeDirecteKWh + d.chargeeDansBatterieKWh),
+	  borderColor: "#5cb85c",
+	  backgroundColor: "rgba(92,184,92,0.24)",
+	  pointRadius: 0,
+	  borderWidth: 1,
+	  tension: 0.1,
+	});
+    if (hasBattery) {
+      datasets.push({
+        label: "Production Batterie",
+        data: days.map((d) => d.productionViaBatterieKWh),
+		borderColor: "#5bc0eb",
+		backgroundColor: "rgba(91,192,235,0.24)",
+        pointRadius: 0,
+        borderWidth: 1,
+        tension: 0.1,
+      });
+    }
+	datasets.push({
+	  label: "Consommation réseau",
+	  data: days.map((d) => d.consommationReseauKWh),
+	  borderColor: "#e0575b",
+	  backgroundColor: "rgba(224,87,91,0.24)",
+	  pointRadius: 0,
+	  borderWidth: 1,
+	  tension: 0.1,
+	});
+	datasets.push({
+	  label: "Injection réseau",
+	  data: days.map((d) => 0-d.surplusVenduKWh),
+	  borderColor: "#e0575b",
+	  backgroundColor: "rgba(224,87,91,0.24)",
+	  pointRadius: 0,
+	  borderWidth: 1,
+	  tension: 0.1,
+	});
+	
+    const ctx2d = document.getElementById("chart-annual-energy").getContext("2d");
+    if (annualEnergyChart) annualEnergyChart.destroy();
+    annualEnergyChart = new Chart(ctx2d, {
+      type: "line",
+      data: { labels: days.map((d, i) => i + 1), datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+			x: {
+			  title: { display: true, text: "Mois", color: "#9a9ea8" },
+
+			  afterBuildTicks: function(axis) {
+				const joursDebutMois = [
+				  1, 32, 60, 91, 121, 152,
+				  182, 213, 244, 274, 305, 335
+				];
+
+				axis.ticks = joursDebutMois.map(jour => ({
+				  value: jour - 1
+				}));
+			  },
+
+			  ticks: {
+				color: "#9a9ea8",
+				callback: function(value) {
+				  const mois = [
+					"Jan", "Fév", "Mar", "Avr", "Mai", "Juin",
+					"Juil", "Août", "Sep", "Oct", "Nov", "Déc"
+				  ];
+
+				  const jour = Number(value) + 1;
+
+				  const debutMois = [
+					1, 32, 60, 91, 121, 152,
+					182, 213, 244, 274, 305, 335
+				  ];
+
+				  const indexMois = debutMois.findIndex((debut, i) =>
+					jour >= debut && (i === 11 || jour < debutMois[i + 1])
+				  );
+
+				  return indexMois >= 0 ? mois[indexMois] : "";
+				},
+			  },
+
+			  grid: {
+				color: "#23272f",
+			  },
+			},
+          y: {
+            title: { display: true, text: "kWh", color: "#9a9ea8" },
+            ticks: { color: "#9a9ea8" },
+            grid: { color: "#23272f" },
+          },
+        },
+        plugins: {
+          legend: { labels: { color: "#676b74" } },
+        },
+      },
+    });
   }
 
   // ------------------------------------------------------------------
