@@ -129,6 +129,8 @@ window.AnnualSimulation = (function () {
     const hasBattery = !!p.battery;
 
     const days = [];
+	const annualData = [];
+	
     let socPct = p.initialSocPct != null ? p.initialSocPct : 10;
     let economieRealiseeEur = 0;
 
@@ -208,6 +210,10 @@ window.AnnualSimulation = (function () {
 
         socPct = hasBattery && result.points.length > 0 ? result.points[result.points.length - 1].socPct : socPct;
 
+        annualData.push({
+			day: result.points,
+		});
+		
         days.push({
           date: key,
           month: m + 1,
@@ -258,6 +264,7 @@ window.AnnualSimulation = (function () {
     const economieReventeEur = p.sellMode === "sell" ? totalSurplusKWh * p.sellTariffPerKwh : 0;
 
     return {
+	  annualData,
       days,
       months,
       hasBattery,

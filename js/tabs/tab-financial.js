@@ -28,6 +28,7 @@ window.TabFinancial = (function () {
   let annualEnergyChart = null;
   let consumptionDayCache = null; // { "MM-DD": [96 valeurs W] } une fois un répertoire validé, sinon null
   let monthlyConsumptionChart = null;
+  let annualSimulationData = null;
 
   function init() {
     renderInstallSelect();
@@ -35,6 +36,7 @@ window.TabFinancial = (function () {
     bindDatabaseChangeListener();
     bindConsumptionDirectory();
     renderConsumptionReport();
+	bindExportSimulatedData();
   }
 
   // ------------------------------------------------------------------
@@ -484,7 +486,12 @@ window.TabFinancial = (function () {
       initialSocPct: 10,
     });
 
-
+    annualSimulationData = result.annualData;
+	const exportButton = document.getElementById("financial-export-simulated-data");
+	if (exportButton) {
+	  exportButton.style.display = annualSimulationData.length > 0 ? "" : "none";
+	}
+	
     const tariffs = window.AppState.get().location.tariffs;
     const months = computeConsumptionReport(consumptionDayCache, tariffs);
     const grand = months.reduce(
@@ -796,6 +803,113 @@ window.TabFinancial = (function () {
         },
       },
     });
+  }
+
+
+  // ------------------------------------------------------------------
+  // Exporte les données simulées dans un fichier .csv
+  // ------------------------------------------------------------------
+  function bindExportSimulatedData() {
+    window.bindOnce(
+      document.getElementById("financial-export-simulated-data"),
+      "click",
+      async function () {
+        await exportSimulatedDataCsv(annualSimulationData);
+      }
+    );
+  }
+
+  async function exportSimulatedDataCsv(annualData) {
+    const rows = [];
+  
+    rows.push([
+      "jour",
+      "heure",
+      "productionW",
+      "consumptionW",
+      "solarToHouseW",
+      "batteryChargeW",
+      "batteryDischargeW",
+      "gridImportW",
+      "gridExportW",
+      "socPct"
+    ].join(";"));
+  
+    annualData.forEach((dayData, dayIndex) => {
+      const date = new Date(2025, 0, dayIndex + 1);
+  
+      const day = String(date.getDate()).padStart(2, "0");
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const dayLabel = `${month}-${day}`;
+  
+      dayData.day.forEach(point => {
+        const totalMinutes = Math.round(point.hour * 60);
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+  
+        const timeLabel =
+          `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+  
+        rows.push([
+          dayLabel,
+          timeLabel,
+          point.productionW,
+          point.consumptionW,
+          point.solarToHouseW,
+          point.batteryChargeW,
+          point.batteryDischargeW,
+          point.gridImportW,
+          point.gridExportW,
+          point.socPct
+        ].join(";"));
+      });
+    });
+  
+    const csv = "\uFEFF" + rows.join("\n");
+  
+    if (window.showSaveFilePicker) {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: "donnees-simulation.csv",
+          types: [
+            {
+              description: "Données de simulation (CSV)",
+              accept: { "text/csv": [".csv"] }
+            }
+          ]
+        });
+  
+        const writable = await handle.createWritable();
+        await writable.write(csv);
+        await writable.close();
+
+        return;
+      } catch (err) {
+        if (err && err.name === "AbortError") {
+          return;
+        }
+  
+        console.warn(
+          "showSaveFilePicker en erreur, repli sur le téléchargement classique :",
+          err
+        );
+      }
+    }
+  
+    // Repli pour les navigateurs ne supportant pas showSaveFilePicker
+    const blob = new Blob(
+      [csv],
+      { type: "text/csv;charset=utf-8;" }
+    );
+  
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+  
+    link.href = url;
+    link.download = "donnees-simulation.csv";
+    link.click();
+  
+    URL.revokeObjectURL(url);
   }
 
   // ------------------------------------------------------------------

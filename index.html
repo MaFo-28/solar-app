@@ -852,13 +852,17 @@
         <h2 class="card__title">Profil de consommation</h2>
       </div>
       <div class="field-row" style="align-items:center; margin-bottom:10px;">
-        <button id="financial-consumption-dir-select" class="btn btn--sm">Choisir un répertoire</button>
+        <button id="financial-consumption-dir-select" class="btn btn--sm btn--primary">Choisir un répertoire</button>
         <input type="file" id="financial-consumption-dir-input" webkitdirectory multiple style="display:none">
         <span id="financial-consumption-dir-name" class="field__hint" style="margin-left:6px;">aucun répertoire chargé</span>
       </div>
       <p class="field__hint">Répertoire contenant 365 fichiers CSV nommés MM-DD.csv (un par jour de l'année, en-tête "heure;puissance_w", 96 lignes par pas de 15 minutes, puissance moyenne en W).</p>
       <p id="financial-consumption-status" class="field__hint" style="margin-top:8px;"></p>
       <ul id="financial-consumption-errors" style="display:none; margin:8px 0 0; padding-left:20px; color:var(--accent-danger); font-size:12px; max-height:220px; overflow:auto;"></ul>
+
+      <div class="field-row" style="align-items:center; margin-bottom:10px;">
+        <button id="financial-export-simulated-data" class="btn btn--sm" style="display:none;">Exporter données simulées</button>
+      </div>
     </div>
 
     <div class="card card--price">
@@ -936,11 +940,11 @@
         <h2 class="card__title">Bilan annuel</h2>
       </div>
       <p id="panel-monthly-hint" class="field__hint">Récupérez d'abord les données PVGIS dans l'onglet Localisation pour voir cette estimation.</p>
-      <div class="chart-wrap" id="panel-monthly-chart-wrap" style="margin-top:12px; display:none;">
+      <div class="chart-bilan-wrap" id="panel-monthly-chart-wrap" style="margin-top:12px; display:none;">
         <canvas id="chart-panel-monthly"></canvas>
       </div>
 	  
-      <div class="chart-wrap" id="consumption-monthly-chart-wrap" style="margin-top:12px; display:none;">
+      <div class="chart-bilan-wrap" id="consumption-monthly-chart-wrap" style="margin-top:12px; display:none;">
         <canvas id="chart-consumption-monthly"></canvas>
       </div>
 	  	  
