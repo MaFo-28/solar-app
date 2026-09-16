@@ -361,7 +361,7 @@ window.TabSimulation = (function () {
     );
 
     return window.BatterySimulation.simulateDay({
-      stepMinutes: 10,
+      stepMinutes: 15,
       productionPoints: powerCurve.points.map((p) => ({ hour: p.hour, powerW: p.powerW })),
       consumptionSegments: ctx.consumptionProfile.segments,
       tariffs: loc.tariffs,

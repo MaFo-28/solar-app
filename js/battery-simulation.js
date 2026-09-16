@@ -95,6 +95,7 @@ window.BatterySimulation = (function () {
     let totalExportKwh = 0;
     let costHc = 0;
     let costHp = 0;
+	let economieMaxEur = 0;
     let costOther = 0;
     let revenueTotal = 0;
 
@@ -107,6 +108,8 @@ window.BatterySimulation = (function () {
 
       const tariff = U.tariffForHour(p.tariffs, hour);
       const tariffCategory = U.classifyTariff(tariff);
+	  
+	  economieMaxEur += (productionW / 1000) * stepHours * (tariff ? tariff.pricePerKwh : 0);
 
       const dischargeAllowedNow = !battery
         ? false
@@ -212,6 +215,7 @@ window.BatterySimulation = (function () {
     return {
       points,
       totalProductionKwh,
+	  economieMaxEur,
       totalConsumptionKwh,
       totalImportKwh,
       totalExportKwh,

@@ -51,7 +51,7 @@ window.TabLocation = (function () {
     renderTariffTable();
     bindGeocodeForm();
     bindManualLatLng();
-    bindPvgisButton();
+//    bindPvgisButton();
     bindPvgisHourlyButtons();
     bindTariffAddRow();
     bindHorizonThreshold();
@@ -756,6 +756,7 @@ window.TabLocation = (function () {
   // moins fluide qu'un bouton magique, mais 100% fiable et ne
   // nécessite aucun serveur relais.
   // ------------------------------------------------------------------
+  /*
   function bindPvgisButton() {
     window.bindOnce(document.getElementById("loc-open-pvgis"), "click", function () {
       const s = window.AppState.get();
@@ -764,7 +765,7 @@ window.TabLocation = (function () {
         return;
       }
       const url =
-        "https://re.jrc.ec.europa.eu/api/v5_2/MRcalc?lat=" +
+        "https://re.jrc.ec.europa.eu/api/v5_3/MRcalc?lat=" +
         s.location.lat +
         "&lon=" +
         s.location.lng +
@@ -797,12 +798,13 @@ window.TabLocation = (function () {
 
     renderPvgisCacheStatus(); // affiche l'état déjà en cache au chargement de l'onglet
   }
-
+*/
   /**
    * Affiche un état PERSISTANT (pas un message qui disparaît) du
    * cache PVGIS : présent ou non, avec un aperçu du contenu, pour
    * lever toute ambiguïté sur le succès de l'import.
    */
+   /*
   function renderPvgisCacheStatus() {
     const el = document.getElementById("loc-pvgis-summary");
     const cache = window.AppState.get().location.pvgisCache;
@@ -839,7 +841,7 @@ window.TabLocation = (function () {
       renderPvgisCacheStatus();
     });
   }
-
+*/
   // ------------------------------------------------------------------
   // PVGIS (irradiance horaire réelle, "Hourly data" / seriescalc)
   //

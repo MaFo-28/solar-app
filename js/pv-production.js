@@ -234,7 +234,7 @@ window.PvProduction = (function () {
 
       const totalTiltedIrradiation = beamTilted + diffuseTilted + reflectedTilted;
       const productionKwh = ratedTotalKwc * totalTiltedIrradiation;
-
+	  
       months.push({
         month,
         irradiationKwhM2: totalTiltedIrradiation,

@@ -117,7 +117,7 @@
         <button id="mask-profile-rename" class="btn btn--sm btn--ghost">Renommer</button>
         <button id="mask-profile-delete" class="btn btn--sm btn--ghost">Supprimer</button>
       </div>
-      <p class="field__hint">Un obstacle proche n'a pas la même hauteur angulaire vue du sol ou du toit (parallaxe) : créez un profil par point d'observation (ex. "Sol", "Bas de toiture", "Haut de toiture"). Un seul profil est affiché à la fois.</p>
+      <p class="field__hint">Un obstacle proche n'a pas la même hauteur angulaire vue du sol ou du toit (parallaxe) : créez un profil par point d'observation (ex. "Sol", "Bas de toiture", "Haut de toiture").</p>
 
       <p class="field__hint" style="margin-top:14px;">Élévation du soleil en fonction de sa direction par rapport au Sud (-90°=Est, 0°=Sud, +90°=Ouest). Survolez la courbe pour lire les valeurs. Repérez un obstacle (arbre, maison...) par son azimut et sa hauteur angulaire, et regardez où il se situe par rapport aux 3 courbes.</p>
       <div class="chart-wrap" style="margin-top:12px;">
@@ -212,21 +212,6 @@
         </tbody>
       </table>
       <p class="field__hint" style="margin-top:10px;">Azimuts par rapport au Sud (même convention que l'orientation des panneaux, onglet 2) : négatif = côté Est, positif = côté Ouest. Heures en temps solaire local (sans changement d'heure été/hiver).</p>
-    </div>
-
-    <div class="card">
-      <div class="card__header">
-        <h2 class="card__title">Données mensuelles PVGIS (irradiance réelle)</h2>
-        <button id="loc-open-pvgis" class="btn btn--sm">Ouvrir PVGIS</button>
-      </div>
-      <p class="field__hint">PVGIS bloque volontairement les requêtes automatiques depuis un navigateur : on ouvre la donnée dans un nouvel onglet, vous copiez tout (Ctrl/Cmd+A puis Ctrl/Cmd+C), et vous collez ici.</p>
-      <div class="field">
-        <label for="loc-pvgis-paste">Coller le contenu JSON récupéré</label>
-        <textarea id="loc-pvgis-paste" rows="4" style="background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); color:var(--text); font-family:var(--font-data); font-size:12px; padding:8px 10px;"></textarea>
-      </div>
-      <button id="loc-pvgis-import" class="btn btn--sm">Importer les données collées</button>
-      <p id="loc-pvgis-status" class="field__hint" style="margin-top:8px;"></p>
-      <div id="loc-pvgis-summary" style="margin-top:10px;"></div>
     </div>
 
     <div class="card">
@@ -595,7 +580,7 @@
         <button id="install-profile-rename" class="btn btn--sm btn--ghost">Renommer</button>
         <button id="install-profile-delete" class="btn btn--sm btn--ghost">Supprimer</button>
       </div>
-      <p class="field__hint">Créez un profil par configuration à comparer (ex. "8 panneaux + batterie", "4 panneaux sans batterie"). Un seul profil est affiché/édité à la fois.</p>
+      <p class="field__hint">Créez un profil par configuration à tester.</p>
     </div>
 
     <div class="card card--price">
@@ -765,7 +750,7 @@
       <div class="card__header">
         <h2 class="card__title">Profil d'installation</h2>
       </div>
-      <div class="field" style="max-width:400px;">
+      <div class="field" style="max-width:700px;">
         <label for="simulation-install-select">Installation simulée</label>
         <select id="simulation-install-select"></select>
         <span class="field__hint">Matériel et stratégies définis dans l'onglet Installation.</span>
@@ -840,7 +825,7 @@
       <div class="card__header">
         <h2 class="card__title">Profil d'installation</h2>
       </div>
-      <div class="field" style="max-width:600px;">
+      <div class="field" style="max-width:700px;">
         <label for="financial-install-select">Installation évaluée</label>
         <select id="financial-install-select"></select>
       </div>
@@ -938,7 +923,6 @@
       <div class="card__header">
         <h2 class="card__title">Bilan annuel</h2>
       </div>
-      <p id="panel-monthly-hint" class="field__hint">Récupérez d'abord les données PVGIS dans l'onglet Localisation pour voir cette estimation.</p>
       <div class="chart-bilan-wrap" id="panel-monthly-chart-wrap" style="margin-top:12px; display:none;">
         <canvas id="chart-panel-monthly"></canvas>
       </div>
@@ -946,7 +930,6 @@
       <div class="chart-bilan-wrap" id="consumption-monthly-chart-wrap" style="margin-top:12px; display:none;">
         <canvas id="chart-consumption-monthly"></canvas>
       </div>
-	  	  
       <div class="stat-row" id="panel-monthly-total-wrap" style="margin-top:14px; display:none;">
         <div class="stat">
           <span class="stat__label">Production estimée</span>

@@ -18,7 +18,7 @@
 window.AnnualSimulation = (function () {
   "use strict";
 
-  const ALBEDO = 0.2;
+  const ALBEDO = 0;
 
   /**
    * Décalage UTC (heures) de l'heure locale Europe/Paris pour une date
@@ -39,7 +39,7 @@ window.AnnualSimulation = (function () {
     const m = tzPart && /GMT([+-]\d+)/.exec(tzPart.value);
     return m ? parseInt(m[1], 10) : 1;
   }
-
+  
   /**
    * Production potentielle (avant pertes onduleur/batterie) d'un jour
    * réel, à pas de 15 min (96 points), à partir de l'irradiance PVGIS
@@ -47,18 +47,32 @@ window.AnnualSimulation = (function () {
    * géométrie solaire exacte du jour (élévation/azimut), projetée sur
    * l'orientation/inclinaison des panneaux avec masquage éventuel.
    *
-   * Même modèle de transposition que PvProduction.monthlyProductionEstimate
-   * (Liu-Jordan : direct via ratio géométrique cosθ/sin(élévation),
-   * diffus via (1+cosβ)/2, réfléchi via albédo·(1-cosβ)/2), mais évalué
-   * instant par instant plutôt qu'en moyenne mensuelle — le masquage ne
-   * s'applique qu'à la composante directe, comme dans ce modèle mensuel.
+   * Transposition :
+   *  - direct : ratio géométrique cosθ/cosθz (=cosθ/sin(élévation)),
+   *    plafonné en excluant les élévations <5° où ce ratio devient
+   *    numériquement instable (division par un sinus proche de 0,
+   *    produisant des artefacts de plusieurs ordres de grandeur
+   *    au-dessus de l'irradiance extraterrestre) ; le masquage ne
+   *    s'applique qu'à cette composante directe.
+   *  - diffus : modèle anisotrope de Muneer (1990), celui utilisé par
+   *    PVGIS en interne — remplace l'ancien modèle isotrope Liu-Jordan
+   *    ((1+cosβ)/2), qui sous-estimait le diffus pour les surfaces
+   *    orientées sud et le surestimait fortement pour les surfaces
+   *    proches du nord. Source : Toledo et al., "Evaluation of Solar
+   *    Radiation Transposition Models...", Energies 2020, 13(3):702,
+   *    éq. 4-13 (coefficients a1/a2/a3 et b=5.73 : valeurs recommandées
+   *    pour l'Europe). Indépendant du masquage horizon (question de
+   *    ciel/orientation, pas d'obstacle local — comme documenté plus
+   *    haut pour le direct).
+   *  - réfléchi : albédo·(1-cosβ)/2, inchangé.
    */
-  function computeDayPotentialProduction(dayHourly, lat, lng, ratedTotalWc, tiltDeg, orientationDeg, mask) {
+  function computeDayPotentialProduction(dayHourly, lat, lng, ratedTotalWc, tiltDeg, orientationDeg, mask, debugLog) {
     const G = window.SolarGeometry;
     const doy = G.dayOfYear(new Date(dayHourly.year, dayHourly.month - 1, dayHourly.day));
     const tz = parisUtcOffsetHours(dayHourly.year, dayHourly.month, dayHourly.day);
     const declination = G.solarDeclination(doy);
     const tiltRad = (tiltDeg * Math.PI) / 180;
+    const Ge = extraterrestrialNormalIrradiance(doy); // 1×/jour, indépendant de l'heure
 
     const points = new Array(96);
     let energyWh = 0;
@@ -76,13 +90,46 @@ window.AnnualSimulation = (function () {
         const azSouth = G.azimuthToSouthRelative(azimuth);
         const masked = window.HorizonMask.isMasked(mask, elevation, azSouth);
 
+        // Géométrie pure, indépendante du masquage — utilisée par le
+        // direct (ci-dessous, conditionné par !masked) et par le
+        // diffus de Muneer (jamais masqué, cf. docstring).
+        const cosTheta = Math.max(0, G.cosIncidenceAngle(elevation, azSouth, tiltDeg, orientationDeg));
+        const sinElevation = Math.sin(elevation * G.DEG2RAD);
+
         let beamWm2 = 0;
         if (!masked) {
-          const cosTheta = Math.max(0, G.cosIncidenceAngle(elevation, azSouth, tiltDeg, orientationDeg));
-          const sinElevation = Math.sin(elevation * G.DEG2RAD);
-          beamWm2 = sinElevation > 0 ? gb * (cosTheta / sinElevation) : 0;
+          // Rb = cosθ/sin(élévation) devient numériquement instable aux
+          // faibles élévations (sinElevation → 0), produisant des artefacts
+          // de plusieurs ordres de grandeur au-dessus de l'irradiance
+          // extraterrestre. Ignoré sous 5° d'élévation, seuil usuel dans
+          // la littérature de transposition solaire pour cette instabilité.
+          const MIN_SIN_ELEVATION = Math.sin(5 * G.DEG2RAD);
+          beamWm2 = sinElevation > MIN_SIN_ELEVATION ? gb * (cosTheta / sinElevation) : 0;
+
+          // --- instrumentation temporaire ---
+          if (debugLog && beamWm2 > 0) {
+            debugLog.push({
+              day: `${dayHourly.year}-${dayHourly.month}-${dayHourly.day}`,
+              hour,
+              elevation,
+              gb,
+              cosTheta,
+              sinElevation,
+              rb: cosTheta / sinElevation,
+              beamWm2,
+            });
+          }
+          // --- fin instrumentation ---
         }
-        const diffuseWm2 = gd * ((1 + Math.cos(tiltRad)) / 2);
+/* MFO
+        const diffuseWm2 = muneerDiffuseTilted(
+          gd, gb, elevation, azSouth, tiltRad, orientationDeg, cosTheta, sinElevation, Ge
+        );
+		*/
+		const diffuseWm2 = muneerDiffuseTilted(
+          gd, gb, elevation, azSouth, tiltRad, orientationDeg, cosTheta, sinElevation, Ge, debugLog, hour, dayHourly
+        );
+		
         const reflectedWm2 = (gb + gd) * ALBEDO * ((1 - Math.cos(tiltRad)) / 2);
         totalWm2 = beamWm2 + diffuseWm2 + reflectedWm2;
       }
@@ -133,6 +180,9 @@ window.AnnualSimulation = (function () {
 	
     let socPct = p.initialSocPct != null ? p.initialSocPct : 10;
     let economieRealiseeEur = 0;
+	
+	//debug MFO
+	const debugLog = [];
 
     for (let m = 0; m < 12; m++) {
       for (let d = 1; d <= U.DAYS_IN_MONTH[m]; d++) {
@@ -142,9 +192,10 @@ window.AnnualSimulation = (function () {
         if (!dayHourly || !consumptionW) continue; // vérifié en amont (complétude des caches), ne devrait pas arriver
 
         const potential = computeDayPotentialProduction(
-          dayHourly, p.lat, p.lng, p.ratedTotalWc, p.tiltDeg, p.orientationDeg, p.mask
+          dayHourly, p.lat, p.lng, p.ratedTotalWc, p.tiltDeg, p.orientationDeg, p.mask, debugLog
         );
-        const consumptionSegments = consumptionW.map((v, i) => ({
+		
+		const consumptionSegments = consumptionW.map((v, i) => ({
           startHour: i * 0.25,
           endHour: i * 0.25 + 0.25,
           powerW: v,
@@ -178,6 +229,7 @@ window.AnnualSimulation = (function () {
 		
 		let consommationReseauHpKwh = 0;
 		let consommationReseauHcKwh = 0;
+		let productionSolaireKwh = 0;
 
         result.points.forEach((pt) => {
           const autoconsommeeW = pt.solarToHouseW + pt.batteryDischargeW;
@@ -203,6 +255,8 @@ window.AnnualSimulation = (function () {
 		  } else if (tariffCategory === "hc") {
 			consommationReseauHcKwh += gridImportKwh;
 		  }
+		  
+		  productionSolaireKwh += (pt.productionW / 1000) * 0.25;
         });
 
         const consommationTotaleKWh = result.totalConsumptionKwh;
@@ -232,16 +286,19 @@ window.AnnualSimulation = (function () {
 		  moyenneUtilisationBatteriePct: hasBattery ? averageSocPct : null,
 		  coutHc: result.costHc,
 		  coutHp: result.costHp,
+		  productionSolaireKwh,
+		  economieMaxEur: result.economieMaxEur,
         });
       }
     }
 
-    const months = [];
+	const months = [];
     for (let m = 1; m <= 12; m++) {
       const dayList = days.filter((d) => d.month === m);
       months.push({
         month: m,
-        productionReelleKWh: sumField(dayList, "productionReelleKWh"),
+        productionReelleKWh: sumField(dayList, "productionSolaireKwh"),
+		economieMaxEur: sumField(dayList, "economieMaxEur"),
         productionAutoconsommeeDirecteKWh: sumField(dayList, "productionAutoconsommeeDirecteKWh"),
         productionViaBatterieKWh: sumField(dayList, "productionViaBatterieKWh"),
         chargeeDansBatterieKWh: sumField(dayList, "chargeeDansBatterieKWh"),
@@ -254,6 +311,8 @@ window.AnnualSimulation = (function () {
     }
 
     const totalProductionReelleKWh = sumField(days, "productionReelleKWh");
+	const totalEconomieMaxEur = sumField(days, "economieMaxEur");
+    const totalProductionPotentielKWh = sumField(days, "productionSolaireKwh");
     const totalAutoconsommeeBrutKWh = sumField(days, "productionAutoconsommeeDirecteKWh") + sumField(days, "chargeeDansBatterieKWh");
     const totalAutoconsommeeNetKWh = sumField(days, "productionAutoconsommeeDirecteKWh") + sumField(days, "productionViaBatterieKWh");
     const totalConsommationKWh = sumField(days, "consommationTotaleKWh");
@@ -271,6 +330,7 @@ window.AnnualSimulation = (function () {
       indicators: {
         tauxAutoconsommationPct: totalProductionReelleKWh > 0 ? (totalAutoconsommeeBrutKWh / totalProductionReelleKWh) * 100 : 0,
         tauxAutoproductionPct: totalConsommationKWh > 0 ? (totalAutoconsommeeNetKWh / totalConsommationKWh) * 100 : 0,
+		economieMaxEur: totalEconomieMaxEur,
         economieRealiseeEur,
         economieReventeEur,
         productionPotentielleTotalKWh: sumField(days, "productionPotentielleKWh"),
@@ -279,15 +339,89 @@ window.AnnualSimulation = (function () {
         consommationTotaleKWh: totalConsommationKWh,
 		consommationTotaleHpKWh:totalConsommationHpKWh,
 		consommationTotaleHcKWh:totalConsommationHcKWh,
-		productionSimuleeTotalKWh: totalProductionReelleKWh,
+		productionSimuleeTotalKWh: totalProductionPotentielKWh,
+		productionReelleKWh:totalProductionReelleKWh,
 		surplusInjecteKWh: totalSurplusKWh,
-		consommationTotaleReseauKWh: totalConsommationHpHcKWh,//totalConsommationKWh-totalAutoconsommeeNetKWh,
+		consommationTotaleReseauKWh: totalConsommationHpHcKWh,
 		energieChargeeBatterieTotalKWh: sumField(days, "chargeeDansBatterieKWh"),
 		energieDechargeeBatterieTotalKWh: sumField(days, "productionViaBatterieKWh"),
 		coutTotalHc: sumField(days, "coutHc"),
 		coutTotalHp: sumField(days, "coutHp"),
 	  },
     };
+  }
+
+  // Modèle de diffus anisotrope de Muneer (1990), tel qu'utilisé par PVGIS.
+  // Source : Toledo et al., "Evaluation of Solar Radiation Transposition
+  // Models...", Energies 2020, 13(3):702 — éq. 4-13. Coefficients a1/a2/a3
+  // et b=5.73 : valeurs recommandées pour l'Europe (Muneer 1990).
+  
+  const MUNEER_A1 = 0.00263;
+  const MUNEER_A2 = -0.712;
+  const MUNEER_A3 = -0.6883;
+  const MUNEER_B_SHADED = 5.73; // climat européen, cas ombragé/couvert (éq. 13)
+  const MUNEER_LOW_ELEVATION_RAD = 0.1; // seuil αs<0.1 rad (~5.73°), éq. 11
+  
+  function muneerSkyTerm(K, tiltRad) {
+    // T (éq. 9) : terme de fond de ciel, fonction de l'inclinaison et de K
+    return (1 + Math.cos(tiltRad)) / 2
+      + K * (Math.sin(tiltRad) - tiltRad * Math.cos(tiltRad) - Math.PI * Math.pow(Math.sin(tiltRad / 2), 2));
+  }
+  
+  const MUNEER_K_SHADED = (2 * MUNEER_B_SHADED) / (Math.PI * (3 + 2 * MUNEER_B_SHADED)); // ≈ 0.25227
+  
+  // Irradiance extraterrestre normale (éq. 6-7). ATTENTION : B doit être en
+  // RADIANS pour Math.cos/sin, alors que la formule de la source l'exprime
+  // en degrés (facteur 360/365) — conversion explicite ci-dessous.
+  function extraterrestrialNormalIrradiance(doy) {
+    const bDeg = (doy - 1) * (360 / 365);
+    const bRad = bDeg * (Math.PI / 180);
+    return 1367 * (
+      1.000110
+      + 0.034221 * Math.cos(bRad)
+      + 0.001280 * Math.sin(bRad)
+      + 0.000719 * Math.cos(2 * bRad)
+      + 0.000077 * Math.sin(2 * bRad)
+    );
+  }
+  
+  function muneerDiffuseTilted(gd, gb, elevationDeg, azSouthDeg, tiltRad, orientationDeg, cosTheta, sinElevation, Ge, debugLog, hour, dayHourly) {
+    const cosThetaZ = sinElevation;
+    const Ge0 = Ge * cosThetaZ;
+    const F = Ge0 > 0 ? Math.min(1, Math.max(0, gb / Ge0)) : 0;
+
+    const logBranch = (branch, value) => {
+      if (debugLog) {
+        debugLog.push({
+          day: `${dayHourly.year}-${dayHourly.month}-${dayHourly.day}`,
+          hour, elevationDeg, branch, F, diffuseWm2: value,
+        });
+      }
+    };
+
+    if (cosTheta <= 0) {
+      const v = gd * muneerSkyTerm(MUNEER_K_SHADED, tiltRad);
+      logBranch('shaded', v);
+      return v;
+    }
+
+    const K = MUNEER_A1 + MUNEER_A2 * F + MUNEER_A3 * F * F;
+    const T = muneerSkyTerm(K, tiltRad);
+    const elevationRad = elevationDeg * (Math.PI / 180);
+
+    if (elevationRad < MUNEER_LOW_ELEVATION_RAD) {
+      const deltaAz = (azSouthDeg - orientationDeg) * (Math.PI / 180);
+      const numerator = Math.sin(tiltRad) * Math.cos(deltaAz);
+      const denom = 0.1 - 0.008 * elevationRad;
+      const v = gd * (T * (1 - F) + F * (numerator / denom));
+      logBranch('sunlit_low_elevation', v);
+      return v;
+    }
+
+    const Rb = cosTheta / cosThetaZ;
+    const v = gd * (T * (1 - F) + F * Rb);
+    logBranch('sunlit_normal', v);
+    return v;
   }
 
   return {

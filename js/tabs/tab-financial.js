@@ -115,8 +115,7 @@ window.TabFinancial = (function () {
       ? ((loc.horizonMaskProfiles.find((p) => p.id === install.panels.horizonMaskProfileId) || {}).mask || [])
       : [];
 
-    const annualProductionKwh = renderMonthlyProduction(loc, install.panels, ratedTotalWc, mask);
-   // renderDegradationChart(install.panels, annualProductionKwh);
+    //renderDegradationChart(install.panels, annualProductionKwh);
     renderAnnualBalance(install, inverter, battery, mask, ratedTotalWc, installCostTotal);
     renderQuote(install);
   }
@@ -150,94 +149,6 @@ window.TabFinancial = (function () {
     document.getElementById("stat-cost-total").textContent = total.toFixed(0);
     return total;
   }
-
-  // ------------------------------------------------------------------
-  // Production mensuelle (PVGIS et simulée)
-  // ------------------------------------------------------------------
-  function renderMonthlyProduction(loc, panelsConfig, ratedTotalWc, mask) {
-    const hint = document.getElementById("panel-monthly-hint");
-    const chartWrap = document.getElementById("panel-monthly-chart-wrap");
-    const totalWrap = document.getElementById("panel-monthly-total-wrap");
-
-    if (!loc.pvgisCache) {
-      hint.textContent = "Récupérez d'abord les données PVGIS dans l'onglet Localisation pour voir cette estimation.";
-      hint.style.display = "block";
-      chartWrap.style.display = "none";
-      totalWrap.style.display = "none";
-      return null;
-    }
-
-    const PV = window.PvProduction;
-    const months = PV.monthlyProductionEstimate(
-      loc.lat, loc.lng, loc.timezoneOffset,
-      ratedTotalWc, panelsConfig.tilt, panelsConfig.orientation, mask, loc.pvgisCache
-    );
-
-    if (!months) {
-      hint.textContent = "Les données PVGIS en cache ne sont pas dans un format exploitable (relancez la récupération dans l'onglet Localisation).";
-      hint.style.display = "block";
-      chartWrap.style.display = "none";
-      totalWrap.style.display = "none";
-      return null;
-    }
-
-    hint.style.display = "none";
-    chartWrap.style.display = "block";
-    totalWrap.style.display = "flex";
-
-	const monthLabels = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
-
-    const totalKwh = months.reduce((sum, m) => sum + m.productionKwh, 0);
-    document.getElementById("stat-annual-production").textContent = totalKwh.toFixed(0);
-
-    const monthlyValues = PV.monthlyProductionValueEur(
-      loc.lat, loc.lng, loc.timezoneOffset,
-      ratedTotalWc, panelsConfig.tilt, panelsConfig.orientation, mask, months, loc.tariffs
-    );
-    const totalValueEur = monthlyValues.reduce((sum, m) => sum + m.valueEur, 0);
-    document.getElementById("stat-annual-value").textContent = totalValueEur.toFixed(0);
-
-    if (months.some((m) => m.kdIsDefault)) {
-      hint.style.display = "block";
-      hint.textContent =
-        "Estimation basée sur une valeur par défaut pour la part de rayonnement diffus (le cache PVGIS date d'avant cette amélioration) — relancez la récupération PVGIS dans l'onglet Localisation pour affiner.";
-    }
-
-    const ctx2d = document.getElementById("chart-panel-monthly").getContext("2d");
-    if (monthlyChart) monthlyChart.destroy();
-    monthlyChart = new Chart(ctx2d, {
-      type: "bar",
-      data: {
-        labels: monthLabels,
-        datasets: [
-          {
-            label: "Production estimée (PVGIS)",
-            data: months.map((m) => m.productionKwh),
-            backgroundColor: "rgba(245,166,35,0.55)",
-            borderRadius: 3,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          x: { ticks: { color: "#9a9ea8" }, grid: { display: false } },
-          y: {
-            title: { display: true, text: "kWh / mois", color: "#9a9ea8" },
-            ticks: { color: "#9a9ea8" },
-            grid: { color: "#23272f" },
-          },
-        },
-        plugins: {
-          legend: { labels: { color: "#676b74" } },
-        },
-      },
-    });
-
-    return totalKwh;
-  }
-
   // ------------------------------------------------------------------
   // Présentation du devis
   // ------------------------------------------------------------------
@@ -412,10 +323,12 @@ window.TabFinancial = (function () {
   // ------------------------------------------------------------------
   function renderAnnualBalance(install, inverter, battery, mask, ratedTotalWc, installCostTotal) {
     const hint = document.getElementById("financial-annual-hint");
+	const maxWrap = document.getElementById("panel-monthly-total-wrap");
     const totalWrap = document.getElementById("financial-annual-total-wrap");
     const utilCard = document.getElementById("financial-utilization-card");
     const indicatorsCard = document.getElementById("financial-indicators-card");
 	const consumptionWrap = document.getElementById("consumption-monthly-chart-wrap");
+    const chartWrap = document.getElementById("panel-monthly-chart-wrap");
 
     const s = window.AppState.get();
     const loc = s.location;
@@ -424,14 +337,16 @@ window.TabFinancial = (function () {
     function hideAnnualSections(message) {
       hint.style.display = "block";
       hint.textContent = message;
+      maxWrap.style.display = "none";
       totalWrap.style.display = "none";
       consumptionWrap.style.display = "none";
+      chartWrap.style.display = "none";
 
       utilCard.style.display = "none";
       indicatorsCard.style.display = "none";
       if (monthlyChart) {
         monthlyChart.data.datasets = monthlyChart.data.datasets.slice(0, 1);
-        monthlyChart.options.plugins.legend.display = false;
+        monthlyChart.options.plugins.legend.display = true;
         monthlyChart.update();
       }
       if (annualUtilizationChart) {
@@ -460,8 +375,10 @@ window.TabFinancial = (function () {
     }
 
     hint.style.display = "none";
+    maxWrap.style.display = "flex";
     totalWrap.style.display = "flex";
     consumptionWrap.style.display = "flex";
+    chartWrap.style.display = "flex";
 
     utilCard.style.display = "block";
     indicatorsCard.style.display = "block";
@@ -493,8 +410,8 @@ window.TabFinancial = (function () {
 	}
 	
     const tariffs = window.AppState.get().location.tariffs;
-    const months = computeConsumptionReport(consumptionDayCache, tariffs);
-    const grand = months.reduce(
+    let months = computeConsumptionReport(consumptionDayCache, tariffs);
+    let grand = months.reduce(
       (acc, t) => ({
         hpKwh: acc.hpKwh + t.hpKwh,
         hcKwh: acc.hcKwh + t.hcKwh,
@@ -505,10 +422,13 @@ window.TabFinancial = (function () {
     );
 	result.indicators.economieRealiseeEur = (grand.hpCost + grand.hcCost) - (result.indicators.coutTotalHp + result.indicators.coutTotalHc);
 
+	document.getElementById("stat-annual-production").textContent = result.indicators.productionSimuleeTotalKWh.toFixed(0);
+	document.getElementById("stat-annual-value").textContent = result.indicators.economieMaxEur.toFixed(0);
+	
     document.getElementById("stat-annual-consumed-gross").textContent = result.indicators.productionConsommeeTotalKWh.toFixed(0);
     document.getElementById("stat-annual-consumed-net").textContent = result.indicators.productionConsommeeNetKWh.toFixed(0);
     document.getElementById("stat-annual-savings").textContent = result.indicators.economieRealiseeEur.toFixed(0);
-    document.getElementById("stat-annual-simulated").textContent = result.indicators.productionSimuleeTotalKWh.toFixed(0);
+    document.getElementById("stat-annual-simulated").textContent = result.indicators.productionReelleKWh.toFixed(0);
     document.getElementById("stat-annual-sold").textContent = result.indicators.surplusInjecteKWh.toFixed(0);
     document.getElementById("stat-annual-network-consumed").textContent = result.indicators.consommationTotaleReseauKWh.toFixed(0);
     document.getElementById("stat-annual-charged").textContent = result.indicators.energieChargeeBatterieTotalKWh.toFixed(0);
@@ -530,40 +450,64 @@ window.TabFinancial = (function () {
    * à la barre 1 (production mensuelle réaliste, dataset 0).
    */
   function renderConsumptionStackOnMonthlyChart(months) {
-    if (!monthlyChart) return;
-    monthlyChart.data.datasets = monthlyChart.data.datasets.slice(0, 1);
-    monthlyChart.data.datasets[0].stack = "prod";
-    monthlyChart.data.datasets.push(
-      {
-        label: "Production simulée",
-        data: months.map((m) => m.productionReelleKWh),
-		backgroundColor: "rgba(255,215,0,0.65)",
-        borderRadius: 3,
+	const U = window.ConsumptionUtils;
+    const ctx2d = document.getElementById("chart-panel-monthly").getContext("2d");
+    if (monthlyChart) monthlyChart.destroy();
+
+    monthlyChart = new Chart(ctx2d, {
+      type: "bar",
+      data: {
+        labels: U.MONTH_NAMES,
+        datasets: [
+          {
+			label: "Production simulée",
+			data: months.map((m) => m.productionReelleKWh),
+			backgroundColor: "rgba(245,166,35,0.55)",//rgba(255,215,0,0.65)",
+			borderRadius: 3,
+          },
+          {
+			label: "Autoconsommation directe",
+			data: months.map((m) => m.productionAutoconsommeeDirecteKWh),
+			backgroundColor: "rgba(62,201,167,0.65)",
+			stack: "conso",
+			borderRadius: 3,
+          },
+		  {
+			label: "Autoconsommation recharge batterie",
+			data: months.map((m) => m.chargeeDansBatterieKWh),
+			backgroundColor: "rgba(155,89,182,0.65)",
+			stack: "conso",
+			borderRadius: 3,
+		  },
+		  {
+			label: "Injection réseau",
+			data: months.map((m) => m.productionInjecteeKWh),
+			backgroundColor: "rgba(224,87,91,0.65)",
+			stack: "conso",
+			borderRadius: 3,
+		  },
+        ],
       },
-      {
-        label: "Autoconsommation directe",
-        data: months.map((m) => m.productionAutoconsommeeDirecteKWh),
-        backgroundColor: "rgba(62,201,167,0.65)",
-        stack: "conso",
-        borderRadius: 3,
+       options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { ticks: { color: "#9a9ea8" }, grid: { display: false } },
+          y: {
+            title: { display: true, text: "kWh / mois", color: "#9a9ea8" },
+            ticks: { color: "#9a9ea8" },
+            grid: { color: "#23272f" },
+          },
+        },
+        plugins: {
+          legend: { labels: { color: "#676b74" } },
+        },
       },
-      {
-        label: "Autoconsommation recharge batterie",
-        data: months.map((m) => m.chargeeDansBatterieKWh),
-		backgroundColor: "rgba(155,89,182,0.65)",
-        stack: "conso",
-        borderRadius: 3,
-      },
-      {
-        label: "Injection réseau",
-        data: months.map((m) => m.productionInjecteeKWh),
-        backgroundColor: "rgba(224,87,91,0.65)",
-        stack: "conso",
-        borderRadius: 3,
-      },
-    );
+    });
+
     monthlyChart.options.plugins.legend.display = true;
     monthlyChart.update();
+	
   }
 
   function renderIndicators(indicators, installCostTotal) {
