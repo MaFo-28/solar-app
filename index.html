@@ -41,6 +41,7 @@
   <button class="tab-nav__item" data-tab="consumption"><span class="tab-nav__index">04</span> Consommation</button>
   <button class="tab-nav__item" data-tab="simulation"><span class="tab-nav__index">05</span> Simulation</button>
   <button class="tab-nav__item" data-tab="financial"><span class="tab-nav__index">06</span> Bilan financier</button>
+  <button class="tab-nav__item" data-tab="visual"><span class="tab-nav__index">07</span> Visualisation</button>
 </nav>
 </div>
 
@@ -1033,6 +1034,50 @@
 
   </section>
 
+<!-- ============================================================
+     ONGLET 7 — VISUALISATION
+     ============================================================ -->
+  <section id="tab-visual" class="tab-panel">
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Import</h2>
+      </div>
+      <button id="btn-import-file" class="btn btn--sm btn--primary">Choisir un fichier</button>
+      <input type="file" id="load-annual-file-input" accept=".csv" style="display:none">
+      <span id="visual-file-info">Aucun fichier chargé</span>
+    </div>
+  
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Période d'analyse</h2>
+      </div>
+      <div style="display: flex; gap: 20px; padding: 10px 0; flex-wrap: wrap; align-items: center;">
+        <div>
+          <span style="color: #9a9ea8; font-size: 14px; display: block; margin-bottom: 5px;">Date de début</span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button id="visual-btn-prev" class="btn btn--sm" style="padding: 4px 10px;" disabled>&lt;</button>
+            <select id="visual-debut-jour" disabled></select>
+            <select id="visual-debut-mois" disabled></select>
+            <button id="visual-btn-next" class="btn btn--sm" style="padding: 4px 10px;" disabled>&gt;</button>
+          </div>
+        </div>
+        <div>
+          <span style="color: #9a9ea8; font-size: 14px; display: block; margin-bottom: 5px;">Nombre de jours</span>
+          <select id="visual-duree-jours" disabled></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Graphique</h2>
+      </div>
+      <div class="chart-bilan-wrap" id="panel-visual-chart-wrap" style="margin-top:12px;">
+        <canvas id="visual-result-chart"></canvas>
+      </div>
+    </div>
+  </section>
+
 </main>
 
 <!-- Vendor (Chart.js, embarqué localement pour fonctionner hors-ligne) -->
@@ -1061,6 +1106,7 @@
 <script src="js/tabs/tab-installation.js"></script>
 <script src="js/tabs/tab-simulation.js"></script>
 <script src="js/tabs/tab-financial.js"></script>
+<script src="js/tabs/tab-visual.js"></script>
 
 <!-- Point d'entrée -->
 <script src="js/project-header.js"></script>
