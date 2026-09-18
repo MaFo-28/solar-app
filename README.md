@@ -10,8 +10,8 @@ L'application permet de choisir précisément le matériel utilisé (panneaux, o
 
 * Définition du lieu d'installation par adresse ou coordonnées GPS
 * Récupération des données de production solaire depuis **PVGIS**
-* Affichage de la production théorique mensuelle
 * Choix de l'année PVGIS utilisée pour la simulation annuelle (2005 à 2023 selon les données disponibles)
+* Affichage de la production théorique mensuelle
 * Gestion des tarifs d'électricité HP/HC
 * Définition du tarif de revente du surplus
 * Création de profils d'ombrage
@@ -20,9 +20,8 @@ L'application permet de choisir précisément le matériel utilisé (panneaux, o
 
 ### PVGIS et calcul de production
 
-Deux types de données PVGIS sont utilisés :
+Type de données PVGIS utilisées :
 
-* une moyenne mensuelle pour obtenir rapidement une estimation sur les 12 mois
 * une année complète de données horaires utilisée par la simulation annuelle
 
 Les données solaires sont transformées pour tenir compte de l'orientation et de l'inclinaison des panneaux ainsi que des profils d'ombrage.
@@ -140,7 +139,9 @@ Le bilan présente :
 
 Pour chaque mois, un graphique présente la production solaire ainsi que la répartition de l'énergie consommée entre solaire direct, batterie et réseau.
 
-Le bilan fournit également :
+Un deuxième graphique présente les consommations initiales et avec le solaire (total, heures pleines et heures creuses)
+
+Le bilan fournit également des indicateurs comme :
 
 * production annuelle estimée
 * économie maximale théorique si toute la production était autoconsommée
@@ -156,6 +157,27 @@ Des courbes quotidiennes sur les 365 jours permettent de suivre :
 * le SoC moyen
 
 Le retour sur investissement actuel est calculé simplement à partir du **coût de l'installation et de l'économie annuelle réalisée**.
+
+L'impression (CTRL+P) de cet onglet est géré à partir du style.css pour générer un PDF exploitable.
+
+Un bouton export permer de générer un fichier CSV de la simulation annuelle, par pas de 15 minutes :
+
+* jour : MM-DD
+* heure : HH-MM
+* productionW : production instantannée (Watt)
+* consumptionW : consommation instantannée (Watt)
+* solarToHouseW : consommation solaire (Watt)
+* batteryChargeW : puissance envoyée vers la batterie (Watt)
+* batteryDischargeW : puissance récupérée de la batterie (Watt)
+* gridImportW : consommation depuis le réseau (Watt)
+* gridExportW : injection vers le réseau (Watt)
+* socPct : niveau de charge de la batterie en (%)
+
+### 7. Visualisation
+
+Permet d'importer un fichier de fichier de simulation annuelle de **365 jours**.
+
+Puis de l'afficher en fonction d'une date début et d'un nombre de jours (de 1 à 31)
 
 ## Utilisation
 
@@ -193,8 +215,6 @@ La base matériel peut être extraite séparément afin de pouvoir être sauvega
 
 Certaines fonctionnalités sont prévues mais ne sont pas encore implémentées :
 
-* export des résultats en PDF
 * simulation pluriannuelle
 * évolution des tarifs de l'électricité
 * vieillissement de la batterie
-* prise en compte du remplacement de la batterie

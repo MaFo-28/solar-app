@@ -336,9 +336,9 @@ window.TabSimulation = (function () {
   // Résultats : 3 graphiques (été/équinoxe/hiver) + coûts
   // ------------------------------------------------------------------
   const SEASONS = [
-    { key: "ete", label: "Solciste d'été" },
+    { key: "ete", label: "Solstice d'été" },
     { key: "equinoxe", label: "Équinoxe" },
-    { key: "hiver", label: "Solciste d'hiver" },
+    { key: "hiver", label: "Solstice d'hiver" },
   ];
 
   function runSimulationForSeason(ctx, seasonKey) {
