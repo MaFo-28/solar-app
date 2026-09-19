@@ -824,16 +824,6 @@
   <section id="tab-financial" class="tab-panel">
     <div class="card">
       <div class="card__header">
-        <h2 class="card__title">Profil d'installation</h2>
-      </div>
-      <div class="field" style="max-width:700px;">
-        <label for="financial-install-select">Installation évaluée</label>
-        <select id="financial-install-select"></select>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card__header">
         <h2 class="card__title">Profil de consommation</h2>
       </div>
       <div class="field-row" style="align-items:center; margin-bottom:10px;">
@@ -847,6 +837,16 @@
 
       <div class="field-row" style="align-items:center; margin-bottom:10px;">
         <button id="financial-export-simulated-data" class="btn btn--sm btn--primary" style="display:none;">Exporter données simulées</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Profil d'installation</h2>
+      </div>
+      <div class="field" style="max-width:700px;">
+        <label for="financial-install-select">Installation évaluée</label>
+        <select id="financial-install-select"></select>
       </div>
     </div>
 
@@ -1005,6 +1005,26 @@
       <div class="chart-bilan-wrap" style="margin-top:12px;">
         <canvas id="chart-annual-utilization"></canvas>
       </div>
+
+      <div class="stat-row" id="stat-soc-report">
+	    <div class="stat">
+	      <span class="stat__label">SoC Max [0% - 15%]</span>
+	      <span class="stat__value"><span id="stat-annual-little-Soc">—</span><span class="stat__unit">jours</span></span>
+	    </div>
+	    <div class="stat">
+	      <span class="stat__label">SoC Max [15% - 50%]</span>
+	      <span class="stat__value"><span id="stat-annual-medium-low-Soc">—</span><span class="stat__unit">jours</span></span>
+	    </div>
+	    <div class="stat">
+	      <span class="stat__label">SoC Max [50% - 95%]</span>
+	      <span class="stat__value"><span id="stat-annual-medium-high-Soc">—</span><span class="stat__unit">jours</span></span>
+	    </div>
+	    <div class="stat">
+	      <span class="stat__label">SoC Max [95% - 100%]</span>
+	      <span class="stat__value"><span id="stat-annual-big-Soc">—</span><span class="stat__unit">jours</span></span>
+	    </div>
+      </div>
+
       <div class="chart-bilan-wrap" style="margin-top:12px;">
         <canvas id="chart-annual-energy"></canvas>
       </div>

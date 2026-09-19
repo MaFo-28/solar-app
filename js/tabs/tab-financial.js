@@ -522,6 +522,18 @@ window.TabFinancial = (function () {
   }
 
   function renderUtilizationChart(days, hasBattery) {
+	const statSoc = document.getElementById("stat-soc-report");
+	
+	if (hasBattery) {
+      document.getElementById("stat-annual-little-Soc").textContent = days.filter(day => day.picChargeBatteriePct <= 15).length;
+      document.getElementById("stat-annual-medium-low-Soc").textContent = days.filter(day => day.picChargeBatteriePct > 15 && day.picChargeBatteriePct <= 50).length;
+      document.getElementById("stat-annual-medium-high-Soc").textContent = days.filter(day => day.picChargeBatteriePct > 50 && day.picChargeBatteriePct <= 95).length;
+      document.getElementById("stat-annual-big-Soc").textContent = days.filter(day => day.picChargeBatteriePct > 95).length;
+	  statSoc.style.display = "flex";
+	}
+	else
+	  statSoc.style.display = "none";
+	
     const datasets = [
       {
         label: "Taux d'utilisation panneaux",
