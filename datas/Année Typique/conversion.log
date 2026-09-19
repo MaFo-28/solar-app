@@ -1,0 +1,295 @@
+==============================================
+Conversion POWER.TXT -> CSV
+Répertoire : C:\Users\matth\Documents\Log Domotique\Travail\2026
+Journées trouvées : 247
+==============================================
+
+[OK] 20260101 : 288 mesures -> 01-01.csv
+[OK] 20260102 : 288 mesures -> 01-02.csv
+[OK] 20260103 : 288 mesures -> 01-03.csv
+[OK] 20260104 : 288 mesures -> 01-04.csv
+[OK] 20260105 : 288 mesures -> 01-05.csv
+[ANOMALIE] 20260106 : 1 problème(s) détecté(s)
+    - Retour temporel détecté : 23:48 -> 22:53 (possible changement d'heure d'hiver)
+[OK] 20260107 : 288 mesures -> 01-07.csv
+[OK] 20260108 : 288 mesures -> 01-08.csv
+[OK] 20260109 : 288 mesures -> 01-09.csv
+[OK] 20260110 : 288 mesures -> 01-10.csv
+[OK] 20260111 : 288 mesures -> 01-11.csv
+[OK] 20260112 : 288 mesures -> 01-12.csv
+[OK] 20260113 : 288 mesures -> 01-13.csv
+[OK] 20260114 : 287 mesures -> 01-14.csv
+[OK] 20260115 : 287 mesures -> 01-15.csv
+[OK] 20260116 : 287 mesures -> 01-16.csv
+[OK] 20260117 : 287 mesures -> 01-17.csv
+[OK] 20260118 : 287 mesures -> 01-18.csv
+[OK] 20260119 : 287 mesures -> 01-19.csv
+[OK] 20260120 : 287 mesures -> 01-20.csv
+[ANOMALIE] 20260121 : 1 problème(s) détecté(s)
+    - Retour temporel détecté : 20:42 -> 20:41 (possible changement d'heure d'hiver)
+[OK] 20260122 : 288 mesures -> 01-22.csv
+[OK] 20260123 : 288 mesures -> 01-23.csv
+[OK] 20260124 : 288 mesures -> 01-24.csv
+[OK] 20260125 : 288 mesures -> 01-25.csv
+[OK] 20260126 : 288 mesures -> 01-26.csv
+[OK] 20260127 : 288 mesures -> 01-27.csv
+[OK] 20260128 : 287 mesures -> 01-28.csv
+[OK] 20260129 : 288 mesures -> 01-29.csv
+[OK] 20260130 : 288 mesures -> 01-30.csv
+[OK] 20260131 : 288 mesures -> 01-31.csv
+[OK] 20260201 : 288 mesures -> 02-01.csv
+[OK] 20260202 : 288 mesures -> 02-02.csv
+[OK] 20260203 : 288 mesures -> 02-03.csv
+[OK] 20260204 : 287 mesures -> 02-04.csv
+[OK] 20260205 : 288 mesures -> 02-05.csv
+[OK] 20260206 : 288 mesures -> 02-06.csv
+[OK] 20260207 : 288 mesures -> 02-07.csv
+[OK] 20260208 : 287 mesures -> 02-08.csv
+[OK] 20260209 : 287 mesures -> 02-09.csv
+[OK] 20260210 : 287 mesures -> 02-10.csv
+[OK] 20260211 : 287 mesures -> 02-11.csv
+[OK] 20260212 : 288 mesures -> 02-12.csv
+[OK] 20260213 : 288 mesures -> 02-13.csv
+[OK] 20260214 : 288 mesures -> 02-14.csv
+[OK] 20260215 : 288 mesures -> 02-15.csv
+[OK] 20260216 : 288 mesures -> 02-16.csv
+[OK] 20260217 : 287 mesures -> 02-17.csv
+[OK] 20260218 : 287 mesures -> 02-18.csv
+[OK] 20260219 : 287 mesures -> 02-19.csv
+[OK] 20260220 : 287 mesures -> 02-20.csv
+[OK] 20260221 : 287 mesures -> 02-21.csv
+[OK] 20260222 : 287 mesures -> 02-22.csv
+[OK] 20260223 : 287 mesures -> 02-23.csv
+[OK] 20260224 : 287 mesures -> 02-24.csv
+[OK] 20260225 : 287 mesures -> 02-25.csv
+[OK] 20260226 : 287 mesures -> 02-26.csv
+[OK] 20260227 : 287 mesures -> 02-27.csv
+[OK] 20260228 : 288 mesures -> 02-28.csv
+[OK] 20260301 : 288 mesures -> 03-01.csv
+[OK] 20260302 : 288 mesures -> 03-02.csv
+[OK] 20260303 : 288 mesures -> 03-03.csv
+[OK] 20260304 : 287 mesures -> 03-04.csv
+[OK] 20260305 : 288 mesures -> 03-05.csv
+[OK] 20260306 : 288 mesures -> 03-06.csv
+[OK] 20260307 : 288 mesures -> 03-07.csv
+[OK] 20260308 : 288 mesures -> 03-08.csv
+[OK] 20260309 : 288 mesures -> 03-09.csv
+[OK] 20260310 : 287 mesures -> 03-10.csv
+[OK] 20260311 : 287 mesures -> 03-11.csv
+[OK] 20260312 : 287 mesures -> 03-12.csv
+[OK] 20260313 : 287 mesures -> 03-13.csv
+[OK] 20260314 : 287 mesures -> 03-14.csv
+[OK] 20260315 : 287 mesures -> 03-15.csv
+[OK] 20260316 : 287 mesures -> 03-16.csv
+[OK] 20260317 : 287 mesures -> 03-17.csv
+[OK] 20260318 : 287 mesures -> 03-18.csv
+[OK] 20260319 : 288 mesures -> 03-19.csv
+[OK] 20260320 : 288 mesures -> 03-20.csv
+[OK] 20260321 : 288 mesures -> 03-21.csv
+[OK] 20260322 : 287 mesures -> 03-22.csv
+[OK] 20260323 : 288 mesures -> 03-23.csv
+[OK] 20260324 : 288 mesures -> 03-24.csv
+[OK] 20260325 : 288 mesures -> 03-25.csv
+[OK] 20260326 : 288 mesures -> 03-26.csv
+[OK] 20260327 : 287 mesures -> 03-27.csv
+[ANOMALIE] 20260328 : 2 problème(s) détecté(s)
+    - Fin des données anticipée : 22:57
+    - 4 quart(s) d'heure sans aucune mesure : 23:00, 23:15, 23:30, 23:45
+[OK] 20260329 : 288 mesures -> 03-29.csv
+[OK] 20260330 : 288 mesures -> 03-30.csv
+[OK] 20260331 : 288 mesures -> 03-31.csv
+[OK] 20260401 : 288 mesures -> 04-01.csv
+[OK] 20260402 : 288 mesures -> 04-02.csv
+[OK] 20260403 : 287 mesures -> 04-03.csv
+[OK] 20260404 : 288 mesures -> 04-04.csv
+[OK] 20260405 : 288 mesures -> 04-05.csv
+[OK] 20260406 : 288 mesures -> 04-06.csv
+[OK] 20260407 : 287 mesures -> 04-07.csv
+[OK] 20260408 : 288 mesures -> 04-08.csv
+[OK] 20260409 : 288 mesures -> 04-09.csv
+[OK] 20260410 : 288 mesures -> 04-10.csv
+[OK] 20260411 : 288 mesures -> 04-11.csv
+[OK] 20260412 : 288 mesures -> 04-12.csv
+[OK] 20260413 : 288 mesures -> 04-13.csv
+[OK] 20260414 : 287 mesures -> 04-14.csv
+[OK] 20260415 : 287 mesures -> 04-15.csv
+[OK] 20260416 : 288 mesures -> 04-16.csv
+[OK] 20260417 : 288 mesures -> 04-17.csv
+[OK] 20260418 : 285 mesures -> 04-18.csv
+[OK] 20260419 : 288 mesures -> 04-19.csv
+[OK] 20260420 : 288 mesures -> 04-20.csv
+[OK] 20260421 : 288 mesures -> 04-21.csv
+[ANOMALIE] 20260422 : 1 problème(s) détecté(s)
+    - Début des données tardif : 00:09
+[OK] 20260423 : 287 mesures -> 04-23.csv
+[OK] 20260424 : 284 mesures -> 04-24.csv
+[OK] 20260425 : 287 mesures -> 04-25.csv
+[OK] 20260426 : 288 mesures -> 04-26.csv
+[OK] 20260427 : 288 mesures -> 04-27.csv
+[OK] 20260428 : 287 mesures -> 04-28.csv
+[OK] 20260429 : 288 mesures -> 04-29.csv
+[OK] 20260430 : 285 mesures -> 04-30.csv
+[OK] 20260501 : 288 mesures -> 05-01.csv
+[OK] 20260502 : 288 mesures -> 05-02.csv
+[OK] 20260503 : 284 mesures -> 05-03.csv
+[OK] 20260504 : 279 mesures -> 05-04.csv
+[OK] 20260505 : 288 mesures -> 05-05.csv
+[OK] 20260506 : 288 mesures -> 05-06.csv
+[OK] 20260507 : 288 mesures -> 05-07.csv
+[OK] 20260508 : 286 mesures -> 05-08.csv
+[OK] 20260509 : 286 mesures -> 05-09.csv
+[ANOMALIE] 20260510 : 1 problème(s) détecté(s)
+    - Retour temporel détecté : 13:53 -> 13:52 (possible changement d'heure d'hiver)
+[OK] 20260511 : 286 mesures -> 05-11.csv
+[OK] 20260512 : 287 mesures -> 05-12.csv
+[OK] 20260513 : 286 mesures -> 05-13.csv
+[OK] 20260514 : 287 mesures -> 05-14.csv
+[OK] 20260515 : 287 mesures -> 05-15.csv
+[OK] 20260516 : 287 mesures -> 05-16.csv
+[OK] 20260517 : 287 mesures -> 05-17.csv
+[OK] 20260518 : 287 mesures -> 05-18.csv
+[OK] 20260519 : 286 mesures -> 05-19.csv
+[OK] 20260520 : 287 mesures -> 05-20.csv
+[OK] 20260521 : 288 mesures -> 05-21.csv
+[OK] 20260522 : 283 mesures -> 05-22.csv
+[OK] 20260523 : 287 mesures -> 05-23.csv
+[OK] 20260524 : 287 mesures -> 05-24.csv
+[OK] 20260525 : 287 mesures -> 05-25.csv
+[OK] 20260526 : 286 mesures -> 05-26.csv
+[OK] 20260527 : 287 mesures -> 05-27.csv
+[OK] 20260528 : 284 mesures -> 05-28.csv
+[OK] 20260529 : 281 mesures -> 05-29.csv
+[OK] 20260530 : 279 mesures -> 05-30.csv
+[ANOMALIE] 20260531 : 1 problème(s) détecté(s)
+    - Début des données tardif : 00:06
+[OK] 20260601 : 281 mesures -> 06-01.csv
+[OK] 20260602 : 278 mesures -> 06-02.csv
+[OK] 20260603 : 279 mesures -> 06-03.csv
+[OK] 20260604 : 280 mesures -> 06-04.csv
+[OK] 20260605 : 287 mesures -> 06-05.csv
+[OK] 20260606 : 287 mesures -> 06-06.csv
+[ANOMALIE] 20260607 : 3 problème(s) détecté(s)
+    - Retour temporel détecté : 12:35 -> 00:05 (possible changement d'heure d'hiver)
+    - Gros trou de données : 00:05 -> 20:27 (1222 minutes, possible changement d'heure d'été ou problème réseau)
+    - 30 quart(s) d'heure sans aucune mesure : 12:45, 13:00, 13:15, 13:30, 13:45, 14:00, 14:15, 14:30, 14:45, 15:00, 15:15, 15:30, 15:45, 16:00, 16:15, 16:30, 16:45, 17:00, 17:15, 17:30, 17:45, 18:00, 18:15, 18:30, 18:45, 19:00, 19:15, 19:30, 19:45, 20:00
+[ANOMALIE] 20260608 : 2 problème(s) détecté(s)
+    - Gros trou de données : 17:12 -> 18:17 (65 minutes, possible changement d'heure d'été ou problème réseau)
+    - 4 quart(s) d'heure sans aucune mesure : 17:15, 17:30, 17:45, 18:00
+[OK] 20260609 : 287 mesures -> 06-09.csv
+[OK] 20260610 : 286 mesures -> 06-10.csv
+[OK] 20260611 : 288 mesures -> 06-11.csv
+[OK] 20260612 : 288 mesures -> 06-12.csv
+[OK] 20260613 : 288 mesures -> 06-13.csv
+[OK] 20260614 : 288 mesures -> 06-14.csv
+[OK] 20260615 : 288 mesures -> 06-15.csv
+[OK] 20260616 : 288 mesures -> 06-16.csv
+[OK] 20260617 : 288 mesures -> 06-17.csv
+[OK] 20260618 : 287 mesures -> 06-18.csv
+[OK] 20260619 : 287 mesures -> 06-19.csv
+[OK] 20260620 : 286 mesures -> 06-20.csv
+[OK] 20260621 : 282 mesures -> 06-21.csv
+[OK] 20260622 : 287 mesures -> 06-22.csv
+[OK] 20260623 : 286 mesures -> 06-23.csv
+[ANOMALIE] 20260624 : 4 problème(s) détecté(s)
+    - Retour temporel détecté : 20:07 -> 19:38 (possible changement d'heure d'hiver)
+    - Retour temporel détecté : 23:55 -> 00:05 (possible changement d'heure d'hiver)
+    - Fin des données anticipée : 00:20
+    - 2 quart(s) d'heure sans aucune mesure : 19:00, 19:15
+[ANOMALIE] 20260625 : 3 problème(s) détecté(s)
+    - Retour temporel détecté : 23:55 -> 00:05 (possible changement d'heure d'hiver)
+    - Début des données tardif : 00:28
+    - Fin des données anticipée : 00:05
+[ANOMALIE] 20260626 : 2 problème(s) détecté(s)
+    - Retour temporel détecté : 11:18 -> 11:15 (possible changement d'heure d'hiver)
+    - Début des données tardif : 00:09
+[OK] 20260627 : 288 mesures -> 06-27.csv
+[OK] 20260628 : 287 mesures -> 06-28.csv
+[OK] 20260629 : 288 mesures -> 06-29.csv
+[OK] 20260630 : 287 mesures -> 06-30.csv
+[OK] 20260701 : 287 mesures -> 07-01.csv
+[OK] 20260702 : 286 mesures -> 07-02.csv
+[OK] 20260703 : 287 mesures -> 07-03.csv
+[OK] 20260704 : 288 mesures -> 07-04.csv
+[OK] 20260705 : 288 mesures -> 07-05.csv
+[OK] 20260706 : 287 mesures -> 07-06.csv
+[OK] 20260707 : 287 mesures -> 07-07.csv
+[OK] 20260708 : 286 mesures -> 07-08.csv
+[OK] 20260709 : 287 mesures -> 07-09.csv
+[OK] 20260710 : 287 mesures -> 07-10.csv
+[OK] 20260711 : 288 mesures -> 07-11.csv
+[OK] 20260712 : 288 mesures -> 07-12.csv
+[OK] 20260713 : 288 mesures -> 07-13.csv
+[OK] 20260714 : 288 mesures -> 07-14.csv
+[OK] 20260715 : 287 mesures -> 07-15.csv
+[OK] 20260716 : 288 mesures -> 07-16.csv
+[OK] 20260717 : 288 mesures -> 07-17.csv
+[OK] 20260718 : 288 mesures -> 07-18.csv
+[OK] 20260719 : 288 mesures -> 07-19.csv
+[OK] 20260720 : 288 mesures -> 07-20.csv
+[OK] 20260721 : 287 mesures -> 07-21.csv
+[OK] 20260722 : 288 mesures -> 07-22.csv
+[OK] 20260723 : 288 mesures -> 07-23.csv
+[OK] 20260724 : 287 mesures -> 07-24.csv
+[OK] 20260725 : 287 mesures -> 07-25.csv
+[OK] 20260726 : 287 mesures -> 07-26.csv
+[OK] 20260727 : 287 mesures -> 07-27.csv
+[OK] 20260728 : 288 mesures -> 07-28.csv
+[OK] 20260729 : 288 mesures -> 07-29.csv
+[OK] 20260730 : 287 mesures -> 07-30.csv
+[OK] 20260731 : 287 mesures -> 07-31.csv
+[OK] 20260801 : 287 mesures -> 08-01.csv
+[OK] 20260802 : 287 mesures -> 08-02.csv
+[OK] 20260803 : 287 mesures -> 08-03.csv
+[OK] 20260804 : 287 mesures -> 08-04.csv
+[OK] 20260805 : 287 mesures -> 08-05.csv
+[OK] 20260806 : 278 mesures -> 08-06.csv
+[ANOMALIE] 20260807 : 3 problème(s) détecté(s)
+    - Retour temporel détecté : 04:21 -> 04:16 (possible changement d'heure d'hiver)
+    - Retour temporel détecté : 04:49 -> 04:46 (possible changement d'heure d'hiver)
+    - Retour temporel détecté : 05:05 -> 05:04 (possible changement d'heure d'hiver)
+[OK] 20260808 : 286 mesures -> 08-08.csv
+[OK] 20260809 : 285 mesures -> 08-09.csv
+[OK] 20260810 : 287 mesures -> 08-10.csv
+[OK] 20260811 : 288 mesures -> 08-11.csv
+[OK] 20260812 : 288 mesures -> 08-12.csv
+[OK] 20260813 : 288 mesures -> 08-13.csv
+[OK] 20260814 : 288 mesures -> 08-14.csv
+[OK] 20260815 : 288 mesures -> 08-15.csv
+[ANOMALIE] 20260816 : 1 problème(s) détecté(s)
+    - Retour temporel détecté : 22:44 -> 22:42 (possible changement d'heure d'hiver)
+[OK] 20260817 : 288 mesures -> 08-17.csv
+[OK] 20260818 : 288 mesures -> 08-18.csv
+[OK] 20260819 : 288 mesures -> 08-19.csv
+[OK] 20260820 : 287 mesures -> 08-20.csv
+[ANOMALIE] 20260821 : 6 problème(s) détecté(s)
+    - Retour temporel détecté : 18:26 -> 18:25 (possible changement d'heure d'hiver)
+    - Retour temporel détecté : 18:42 -> 18:40 (possible changement d'heure d'hiver)
+    - Retour temporel détecté : 18:56 -> 18:55 (possible changement d'heure d'hiver)
+    - Retour temporel détecté : 19:11 -> 19:10 (possible changement d'heure d'hiver)
+    - Retour temporel détecté : 20:01 -> 20:00 (possible changement d'heure d'hiver)
+    - Retour temporel détecté : 22:41 -> 22:40 (possible changement d'heure d'hiver)
+[ANOMALIE] 20260822 : 2 problème(s) détecté(s)
+    - Retour temporel détecté : 00:31 -> 00:25 (possible changement d'heure d'hiver)
+    - Retour temporel détecté : 01:16 -> 01:15 (possible changement d'heure d'hiver)
+[OK] 20260823 : 287 mesures -> 08-23.csv
+[OK] 20260824 : 287 mesures -> 08-24.csv
+[OK] 20260825 : 288 mesures -> 08-25.csv
+[OK] 20260826 : 288 mesures -> 08-26.csv
+[OK] 20260827 : 287 mesures -> 08-27.csv
+[OK] 20260828 : 287 mesures -> 08-28.csv
+[OK] 20260829 : 288 mesures -> 08-29.csv
+[OK] 20260830 : 288 mesures -> 08-30.csv
+[OK] 20260831 : 287 mesures -> 08-31.csv
+[OK] 20260901 : 288 mesures -> 09-01.csv
+[OK] 20260902 : 287 mesures -> 09-02.csv
+[OK] 20260903 : 288 mesures -> 09-03.csv
+[OK] 20260904 : 287 mesures -> 09-04.csv
+
+==============================================
+RÉSUMÉ
+==============================================
+Journées trouvées : 247
+Conversions réussies : 247
+Erreurs bloquantes : 0
+Rapport : C:\Users\matth\Documents\Log Domotique\Travail\2026\conversion.log
+==============================================
